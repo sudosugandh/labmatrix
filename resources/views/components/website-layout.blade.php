@@ -1,0 +1,1 @@
+@include('website.layout', ['settings' => $settings ?? $this->settings, 'menuItems' => $menuItems ?? $this->menuItems])

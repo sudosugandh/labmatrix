@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+[x-cloak] {
+    display: none !important;
+}
+
+.line-clamp-4 {
+    display: -webkit-box;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* CMS content - TinyMCE output (SS3, SS4, SS5) */
+.cms-content,
+.cms-content-body {
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: #374151;
+}
+
+.cms-content h2,
+.cms-content-body h2 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: #111827;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.cms-content h3,
+.cms-content-body h3 {
+    font-size: 1.375rem;
+    font-weight: 600;
+    color: #111827;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.cms-content p,
+.cms-content-body p {
+    margin-bottom: 1rem;
+}
+
+.cms-content ul,
+.cms-content-body ul,
+.cms-content ol,
+.cms-content-body ol {
+    margin-bottom: 1rem;
+    padding-left: 1.5rem;
+}
+
+.cms-content li,
+.cms-content-body li {
+    margin-bottom: 0.5rem;
+}
+
+.cms-content li strong,
+.cms-content-body li strong {
+    color: #111827;
+}
+
+/* Text highlight (yellow) - TinyMCE backcolor */
+.cms-content mark,
+.cms-content-body mark,
+.cms-content .mark,
+.cms-content-body .mark,
+.cms-content [style*="background-color: rgb(255, 255, 0)"],
+.cms-content [style*="background-color:yellow"] {
+    background-color: #fef08a !important;
+    padding: 0 0.15em;
+}
+
+.cms-content img,
+.cms-content-body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 1.5rem auto;
+    border-radius: 0.5rem;
+}
+
+/* Tables (SS5 - Question Banks, etc.) */
+.cms-content table,
+.cms-content-body table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-size: 0.9375rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 0.5rem;
+    overflow: hidden;
+}
+
+.cms-content th,
+.cms-content-body th,
+.cms-content td,
+.cms-content-body td {
+    border: 1px solid #e5e7eb;
+    padding: 0.75rem 1rem;
+    text-align: left;
+}
+
+.cms-content th,
+.cms-content-body th {
+    background-color: #f3f4f6;
+    font-weight: 600;
+    color: #111827;
+}
+
+.cms-content tr:nth-child(even),
+.cms-content-body tr:nth-child(even) {
+    background-color: #fafafa;
+}
+
+/* Two-column grid (SS4 - Speakers layout) */
+.cms-content .grid-2-col,
+.cms-content-body .grid-2-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    align-items: start;
+    margin: 2rem 0;
+}
+
+@media (max-width: 768px) {
+    .cms-content .grid-2-col,
+    .cms-content-body .grid-2-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Accent links */
+.cms-content a,
+.cms-content-body a {
+    color: var(--primary-color, #3B82F6);
+    text-decoration: underline;
+}
+
+.cms-content a:hover,
+.cms-content-body a:hover {
+    opacity: 0.9;
+}
+
+/* Cards / bordered sections */
+.cms-content .card,
+.cms-content-body .card {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    padding: 1.25rem;
+    margin: 1rem 0;
+}
+
+/* Section title with green bar */
+.cms-content .section-title,
+.cms-content-body .section-title {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.cms-content .section-title::before,
+.cms-content-body .section-title::before {
+    content: '';
+    width: 3rem;
+    height: 4px;
+    background: var(--primary-color, #3B82F6);
+    margin-bottom: 0.75rem;
+    border-radius: 2px;
+}
+
+/* Video embed */
+.cms-content iframe,
+.cms-content-body iframe {
+    max-width: 100%;
+    border-radius: 0.5rem;
+    margin: 1rem 0;
+}
