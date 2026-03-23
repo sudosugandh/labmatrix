@@ -1,4 +1,17 @@
 <!DOCTYPE html>
+@php
+    if (!isset($settings) || $settings === null) {
+        $settings = \App\Models\WebsiteSetting::getForCurrentLab();
+    }
+    if ($settings === null) {
+        $settings = new \App\Models\WebsiteSetting([
+            'primary_color' => '#6366f1',
+            'brand_name' => currentLab()?->name ?? 'HealthMatrix',
+            'hero_title' => 'Welcome to ' . (currentLab()?->name ?? 'HealthMatrix'),
+            'hero_subtitle' => 'Your trusted diagnostic center',
+        ]);
+    }
+@endphp
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
     <meta charset="utf-8">

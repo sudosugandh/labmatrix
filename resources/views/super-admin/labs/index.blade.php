@@ -46,18 +46,38 @@
                 </select>
             </div>
             <div class="min-w-[150px]">
-                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-2">Lab status</label>
                 <select name="status" id="status" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
-                    <option value="">All Status</option>
+                    <option value="">All</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Active</option>
                     <option value="suspended" {{ request('status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                </select>
+            </div>
+            <div class="min-w-[150px]">
+                <label for="subscription_plan" class="block text-sm font-medium text-gray-700 mb-2">Plan</label>
+                <select name="subscription_plan" id="subscription_plan" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
+                    <option value="">All plans</option>
+                    <option value="trial" {{ request('subscription_plan') === 'trial' ? 'selected' : '' }}>Trial</option>
+                    <option value="basic" {{ request('subscription_plan') === 'basic' ? 'selected' : '' }}>Basic</option>
+                    <option value="pro" {{ request('subscription_plan') === 'pro' ? 'selected' : '' }}>Pro</option>
+                    <option value="enterprise" {{ request('subscription_plan') === 'enterprise' ? 'selected' : '' }}>Enterprise</option>
+                </select>
+            </div>
+            <div class="min-w-[170px]">
+                <label for="subscription_status" class="block text-sm font-medium text-gray-700 mb-2">Billing status</label>
+                <select name="subscription_status" id="subscription_status" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
+                    <option value="">All</option>
+                    <option value="active" {{ request('subscription_status') === 'active' ? 'selected' : '' }}>Active</option>
+                    <option value="expired" {{ request('subscription_status') === 'expired' ? 'selected' : '' }}>Expired</option>
+                    <option value="suspended" {{ request('subscription_status') === 'suspended' ? 'selected' : '' }}>Suspended</option>
+                    <option value="cancelled" {{ request('subscription_status') === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
                 </select>
             </div>
             <div>
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-6 rounded-lg shadow-sm hover:shadow-md transition-all">
                     Filter
                 </button>
-                @if(request()->hasAny(['search', 'level', 'status']))
+                @if(request()->hasAny(['search', 'level', 'status', 'subscription_plan', 'subscription_status']))
                     <a href="{{ route('super-admin.labs.index') }}" class="ml-2 text-gray-600 hover:text-gray-900 font-medium">
                         Clear
                     </a>
@@ -78,7 +98,11 @@
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lab Name</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Level</th>
-                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Lab</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Plan</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Billing</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Added</th>
+                            <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Last order</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Users</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Patients</th>
                             <th class="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Orders</th>
@@ -102,6 +126,48 @@
                                     <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ ($lab->status ?? 'active') === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
                                         {{ ucfirst($lab->status ?? 'active') }}
                                     </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @php
+                                        $plan = $lab->subscription_plan ?? 'trial';
+                                        $planClass = match ($plan) {
+                                            'trial' => 'bg-amber-100 text-amber-900',
+                                            'basic' => 'bg-sky-100 text-sky-900',
+                                            'pro' => 'bg-indigo-100 text-indigo-900',
+                                            'enterprise' => 'bg-violet-100 text-violet-900',
+                                            default => 'bg-gray-100 text-gray-800',
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $planClass }}">
+                                        {{ ucfirst($plan) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @php
+                                        $sub = $lab->subscription_status ?? 'active';
+                                        $subClass = match ($sub) {
+                                            'active' => 'bg-emerald-100 text-emerald-900',
+                                            'expired' => 'bg-red-100 text-red-900',
+                                            'suspended' => 'bg-orange-100 text-orange-900',
+                                            'cancelled' => 'bg-slate-200 text-slate-800',
+                                            default => 'bg-gray-100 text-gray-800',
+                                        };
+                                    @endphp
+                                    <span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $subClass }}">
+                                        {{ ucfirst($sub) }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600" title="{{ $lab->created_at->toIso8601String() }}">
+                                    {{ $lab->created_at->format('M j, Y') }}
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                    @if($lab->test_orders_max_created_at)
+                                        <span title="{{ \Illuminate\Support\Carbon::parse($lab->test_orders_max_created_at)->format('Y-m-d H:i') }}">
+                                            {{ \Illuminate\Support\Carbon::parse($lab->test_orders_max_created_at)->diffForHumans() }}
+                                        </span>
+                                    @else
+                                        <span class="text-gray-400">—</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $lab->users_count }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $lab->patients_count }}</td>

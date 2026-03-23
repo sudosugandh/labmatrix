@@ -5,7 +5,6 @@ namespace App\Http\Middleware;
 use App\Models\Domain;
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 class DetectDomain
@@ -17,15 +16,13 @@ class DetectDomain
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // Skip domain detection for super admin routes
+        // Super-admin UI does not need tenant context; allow any host without binding lab_id.
         if ($request->is('super-admin*')) {
             return $next($request);
         }
 
-        // Skip domain detection if user is super admin (they can access from any domain)
-        if (Auth::check() && Auth::user()->isSuperAdmin()) {
-            return $next($request);
-        }
+        // Public and lab routes always resolve the lab from the request host (even when a
+        // super admin is logged in), so currentLabId() and WebsiteSetting work on /, CMS, etc.
 
         // Get host and normalize it (remove port if present)
         $host = $request->getHost();

@@ -65,7 +65,10 @@ class SuperAdminController extends Controller
      */
     public function exportLabs(Request $request)
     {
-        $labs = Lab::withCount(['users', 'domains', 'patients', 'testOrders', 'reports'])->get();
+        $labs = Lab::withCount(['users', 'domains', 'patients', 'testOrders', 'reports'])
+            ->withMax('testOrders', 'created_at')
+            ->orderByDesc('created_at')
+            ->get();
 
         $filename = 'labs_export_' . date('Y-m-d_His') . '.csv';
         
@@ -78,7 +81,12 @@ class SuperAdminController extends Controller
             $file = fopen('php://output', 'w');
             
             // Headers
-            fputcsv($file, ['ID', 'Name', 'Email', 'Phone', 'Address', 'Level', 'Status', 'Users', 'Patients', 'Orders', 'Reports', 'Domains', 'Created At']);
+            fputcsv($file, [
+                'ID', 'Name', 'Email', 'Phone', 'Address', 'Level', 'Lab Status',
+                'Subscription Plan', 'Subscription Status', 'Sub. End Date',
+                'Users', 'Patients', 'Orders', 'Reports', 'Domains',
+                'Last Order At', 'Created At',
+            ]);
             
             // Data
             foreach ($labs as $lab) {
@@ -90,11 +98,17 @@ class SuperAdminController extends Controller
                     $lab->address,
                     $lab->level,
                     $lab->status ?? 'active',
+                    $lab->subscription_plan ?? 'trial',
+                    $lab->subscription_status ?? 'active',
+                    $lab->subscription_end_date?->format('Y-m-d') ?? '',
                     $lab->users_count,
                     $lab->patients_count,
                     $lab->test_orders_count,
                     $lab->reports_count,
                     $lab->domains_count,
+                    $lab->test_orders_max_created_at
+                        ? \Illuminate\Support\Carbon::parse($lab->test_orders_max_created_at)->format('Y-m-d H:i:s')
+                        : '',
                     $lab->created_at->format('Y-m-d H:i:s'),
                 ]);
             }
@@ -110,7 +124,8 @@ class SuperAdminController extends Controller
      */
     public function labs(Request $request): View
     {
-        $query = Lab::withCount(['users', 'domains', 'patients', 'testOrders', 'reports']);
+        $query = Lab::withCount(['users', 'domains', 'patients', 'testOrders', 'reports'])
+            ->withMax('testOrders', 'created_at');
 
         // Search
         if ($request->filled('search')) {
@@ -127,9 +142,19 @@ class SuperAdminController extends Controller
             $query->where('level', $request->level);
         }
 
-        // Filter by status
+        // Filter by lab operational status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        // Filter by subscription plan
+        if ($request->filled('subscription_plan')) {
+            $query->where('subscription_plan', $request->subscription_plan);
+        }
+
+        // Filter by subscription billing status
+        if ($request->filled('subscription_status')) {
+            $query->where('subscription_status', $request->subscription_status);
         }
 
         $labs = $query->latest()->paginate(15)->withQueryString();
