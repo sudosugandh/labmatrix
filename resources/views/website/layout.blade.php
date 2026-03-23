@@ -240,6 +240,7 @@
         }
         $currentPath = '/' . trim(request()->path(), '/');
     @endphp
+    @stack('styles')
 </head>
 <body class="font-sans antialiased" x-data="{ navOpen: false }">
     <!-- Page load loader (lab-themed) -->

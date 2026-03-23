@@ -1,62 +1,82 @@
 @extends('website.layout')
 
+@push('styles')
+<style>
+.booking-input {
+    border-radius: 0.75rem;
+    border: 1px solid rgb(226 232 240 / 0.9);
+    padding: 0.75rem 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.booking-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent);
+}
+</style>
+@endpush
+
 @section('content')
-<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
-    <div class="bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-200/60 overflow-hidden">
-        <div class="px-8 pt-8 pb-6 border-b border-slate-100">
-            <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center gap-2 text-slate-500 hover:text-slate-700 text-sm font-medium mb-6">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                Change booking type
-            </a>
-            <div class="flex justify-center mb-4">
-                <div class="flex items-center gap-2">
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style="background: var(--primary-color);">1</span>
-                    <span class="w-8 h-0.5 bg-slate-200"></span>
-                    <span class="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white" style="background: var(--primary-color);">2</span>
-                </div>
-            </div>
-            <h1 class="font-display text-2xl md:text-3xl font-bold text-slate-900 mb-2 text-center">Book an Appointment</h1>
-            <p class="text-slate-600 text-center">Fill in your details to schedule an appointment with us.</p>
+{{-- Premium Hero Section --}}
+<section class="relative overflow-hidden bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800">
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.03\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-60"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+        <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center gap-2 text-white/70 hover:text-white text-sm font-medium mb-8 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+            Change booking type
+        </a>
+        <div class="flex items-center gap-3 mb-4">
+            <span class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg" style="background: var(--primary-color); box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-color) 50%, transparent);">1</span>
+            <span class="w-12 h-0.5 bg-white/30"></span>
+            <span class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold border-2 border-white/40 text-white/80">2</span>
         </div>
-        <div class="p-8">
+        <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">Book an Appointment</h1>
+        <p class="text-lg md:text-xl text-slate-300 max-w-2xl">Schedule your visit with our lab. Fast, reliable, and convenient.</p>
+    </div>
+</section>
+
+{{-- Main Content --}}
+<section class="relative bg-gradient-to-b from-slate-50 to-white py-16 md:py-24">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100/50 via-transparent to-transparent"></div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+            {{-- Form Column --}}
+            <div class="lg:col-span-2">
 
         @if(session('success'))
-            <div class="mb-6 flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800" role="alert">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    <span>{{ session('success') }}</span>
+            <div class="mb-8 flex items-center gap-3 p-5 rounded-2xl bg-emerald-50 border border-emerald-200/80 text-emerald-800 shadow-sm" role="alert">
+                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
                 </div>
+                <span class="font-medium">{{ session('success') }}</span>
             </div>
         @endif
 
         @if($errors->any())
-            <div class="mb-6 flex items-start gap-3 p-4 rounded-xl bg-red-50 border border-red-200 text-red-800" role="alert">
-                <div class="flex items-center">
-                    <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                    </svg>
-                    <div>
-                        <p class="font-semibold">Please fix the following errors:</p>
-                        <ul class="mt-2 list-disc list-inside">
-                            @foreach($errors->all() as $error)
-                                <li>{{ $error }}</li>
-                            @endforeach
-                        </ul>
-                    </div>
+            <div class="mb-8 flex items-start gap-3 p-5 rounded-2xl bg-red-50 border border-red-200/80 text-red-800 shadow-sm" role="alert">
+                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div>
+                    <p class="font-semibold">Please fix the following errors:</p>
+                    <ul class="mt-2 list-disc list-inside text-sm">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
                 </div>
             </div>
         @endif
 
-        <form method="POST" action="{{ route('public.appointments.store') }}" class="space-y-6">
+        <form method="POST" action="{{ route('public.appointments.store') }}" class="space-y-8">
             @csrf
 
             <input type="hidden" name="booking_type" value="{{ $bookingType ?? 'patient' }}">
 
             @if(isset($bookingType) && $bookingType === 'doctor')
             <!-- Doctor Information -->
-            <div class="bg-gradient-to-r from-emerald-50/80 to-green-50/80 rounded-2xl p-6 mb-6 border border-emerald-200/80">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+                <div class="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-100/60 to-transparent rounded-bl-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <svg class="w-6 h-6 mr-2 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -68,7 +88,7 @@
                 <div class="mb-6">
                     <label for="doctor_selection" class="block text-sm font-medium text-gray-700 mb-2">Are you registered with us? *</label>
                     <select name="doctor_selection" id="doctor_selection" required
-                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_selection') border-red-500 @enderror"
+                        class="block w-full booking-input @error('doctor_selection') border-red-500 @enderror"
                         onchange="toggleDoctorFields()">
                         <option value="">Select an option</option>
                         <option value="registered" {{ old('doctor_selection') == 'registered' ? 'selected' : '' }}>Yes, I'm registered</option>
@@ -85,7 +105,7 @@
                         <div>
                             <label for="doctor_id" class="block text-sm font-medium text-gray-700 mb-2">Select Your Name *</label>
                             <select name="doctor_id" id="doctor_id"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_id') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_id') border-red-500 @enderror">
                                 <option value="">Select Your Name</option>
                                 @foreach($doctors as $doctor)
                                     <option value="{{ $doctor->id }}" {{ old('doctor_id') == $doctor->id ? 'selected' : '' }}>
@@ -107,7 +127,7 @@
                             <label for="referral_number" class="block text-sm font-medium text-gray-700 mb-2">Referral Number (Optional)</label>
                             <input type="text" name="referral_number" id="referral_number" value="{{ old('referral_number') }}"
                                 placeholder="Enter referral number if any"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('referral_number') border-red-500 @enderror">
+                                class="block w-full booking-input @error('referral_number') border-red-500 @enderror">
                             @error('referral_number')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -136,7 +156,7 @@
                             <label for="doctor_name" class="block text-sm font-medium text-gray-700 mb-2">Your Name *</label>
                             <input type="text" name="doctor_name" id="doctor_name" value="{{ old('doctor_name') }}"
                                 placeholder="Enter your full name"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_name') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_name') border-red-500 @enderror">
                             @error('doctor_name')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -145,7 +165,7 @@
                             <label for="doctor_phone" class="block text-sm font-medium text-gray-700 mb-2">Your Phone *</label>
                             <input type="text" name="doctor_phone" id="doctor_phone" value="{{ old('doctor_phone') }}"
                                 placeholder="Enter your phone number"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_phone') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_phone') border-red-500 @enderror">
                             @error('doctor_phone')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -154,7 +174,7 @@
                             <label for="doctor_email" class="block text-sm font-medium text-gray-700 mb-2">Your Email</label>
                             <input type="email" name="doctor_email" id="doctor_email" value="{{ old('doctor_email') }}"
                                 placeholder="Enter your email"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_email') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_email') border-red-500 @enderror">
                             @error('doctor_email')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -163,7 +183,7 @@
                             <label for="doctor_specialization" class="block text-sm font-medium text-gray-700 mb-2">Specialization</label>
                             <input type="text" name="doctor_specialization" id="doctor_specialization" value="{{ old('doctor_specialization') }}"
                                 placeholder="e.g., Cardiologist, General Physician"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_specialization') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_specialization') border-red-500 @enderror">
                             @error('doctor_specialization')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -172,7 +192,7 @@
                             <label for="doctor_clinic" class="block text-sm font-medium text-gray-700 mb-2">Clinic Name</label>
                             <input type="text" name="doctor_clinic" id="doctor_clinic" value="{{ old('doctor_clinic') }}"
                                 placeholder="Enter clinic name"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('doctor_clinic') border-red-500 @enderror">
+                                class="block w-full booking-input @error('doctor_clinic') border-red-500 @enderror">
                             @error('doctor_clinic')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -181,7 +201,7 @@
                             <label for="referral_number_manual" class="block text-sm font-medium text-gray-700 mb-2">Referral Number (Optional)</label>
                             <input type="text" name="referral_number_manual" id="referral_number_manual" value="{{ old('referral_number_manual') }}"
                                 placeholder="Enter referral number if any"
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 px-4 py-3 @error('referral_number_manual') border-red-500 @enderror">
+                                class="block w-full booking-input @error('referral_number_manual') border-red-500 @enderror">
                             @error('referral_number_manual')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -192,7 +212,8 @@
             @endif
 
             <!-- Patient Information -->
-            <div class="bg-slate-50/80 rounded-2xl p-6 mb-6 border border-slate-200/60">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+                <div class="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-bl from-slate-100/80 to-transparent rounded-full pointer-events-none"></div>
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4">
                     @if(isset($bookingType) && $bookingType === 'doctor')
                         Patient Information
@@ -206,7 +227,7 @@
                         <label for="name" class="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
                         <input type="text" name="name" id="name" value="{{ old('name') }}" required
                             placeholder="Enter your full name"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('name') border-red-500 @enderror">
+                            class="block w-full booking-input @error('name') border-red-500 @enderror">
                         @error('name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -216,7 +237,7 @@
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
                         <input type="text" name="phone" id="phone" value="{{ old('phone') }}" required
                             placeholder="Enter your phone number"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('phone') border-red-500 @enderror">
+                            class="block w-full booking-input @error('phone') border-red-500 @enderror">
                         @error('phone')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -226,7 +247,7 @@
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email (Optional)</label>
                         <input type="email" name="email" id="email" value="{{ old('email') }}"
                             placeholder="Enter your email"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('email') border-red-500 @enderror">
+                            class="block w-full booking-input @error('email') border-red-500 @enderror">
                         @error('email')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -236,7 +257,7 @@
                         <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age (Optional)</label>
                         <input type="number" name="age" id="age" value="{{ old('age') }}" min="1" max="150"
                             placeholder="Enter your age"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('age') border-red-500 @enderror">
+                            class="block w-full booking-input @error('age') border-red-500 @enderror">
                         @error('age')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -245,7 +266,7 @@
                     <div>
                         <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender (Optional)</label>
                         <select name="gender" id="gender"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('gender') border-red-500 @enderror">
+                            class="block w-full booking-input @error('gender') border-red-500 @enderror">
                             <option value="">Select Gender</option>
                             <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
@@ -260,7 +281,8 @@
 
             @if(!isset($bookingType) || $bookingType === 'patient')
             <!-- Referring Doctor Information (Optional for Patients) -->
-            <div class="bg-blue-50/80 rounded-2xl p-6 mb-6 border border-blue-200/80">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+                <div class="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-blue-50/80 to-transparent rounded-bl-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <svg class="w-6 h-6 mr-2 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -274,7 +296,7 @@
                         <label for="referring_doctor_name" class="block text-sm font-medium text-gray-700 mb-2">Doctor's Name</label>
                         <input type="text" name="referring_doctor_name" id="referring_doctor_name" value="{{ old('referring_doctor_name') }}"
                             placeholder="Enter doctor's name"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-3 @error('referring_doctor_name') border-red-500 @enderror">
+                            class="block w-full booking-input @error('referring_doctor_name') border-red-500 @enderror">
                         @error('referring_doctor_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -284,7 +306,7 @@
                         <label for="referring_doctor_phone" class="block text-sm font-medium text-gray-700 mb-2">Doctor's Phone</label>
                         <input type="text" name="referring_doctor_phone" id="referring_doctor_phone" value="{{ old('referring_doctor_phone') }}"
                             placeholder="Enter doctor's phone number"
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-3 @error('referring_doctor_phone') border-red-500 @enderror">
+                            class="block w-full booking-input @error('referring_doctor_phone') border-red-500 @enderror">
                         @error('referring_doctor_phone')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -293,7 +315,7 @@
             </div>
 
             <!-- Prescription Upload (Optional for Patients) -->
-            <div class="rounded-2xl p-6 mb-6 border border-slate-200/80" style="background: color-mix(in srgb, var(--primary-color) 6%, white);">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden" style="background: linear-gradient(135deg, white 0%, color-mix(in srgb, var(--primary-color) 5%, white) 100%);">
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -304,7 +326,7 @@
                 
                 <div>
                     <label for="prescription_file" class="block text-sm font-medium text-gray-700 mb-2">Prescription File</label>
-                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-purple-400 transition-colors">
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-200/80 border-dashed rounded-xl hover:border-[var(--primary-color)]/50 hover:bg-slate-50/50 transition-all duration-200">
                         <div class="space-y-1 text-center">
                             <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                 <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
@@ -330,7 +352,7 @@
 
             <!-- Package Selection (Optional) -->
             @if(isset($packages) && $packages->count() > 0)
-            <div class="rounded-2xl p-6 mb-6 border border-slate-200/80" style="background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 8%, white) 0%, color-mix(in srgb, var(--primary-color) 4%, white) 100%);">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden" style="background: linear-gradient(135deg, white 0%, color-mix(in srgb, var(--primary-color) 6%, white) 50%, color-mix(in srgb, var(--primary-color) 3%, white) 100%);">
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center">
                     <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path>
@@ -342,10 +364,10 @@
                 <div>
                     <label for="package_id" class="block text-sm font-medium text-gray-700 mb-2">Package</label>
                     <select name="package_id" id="package_id"
-                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('package_id') border-red-500 @enderror">
+                        class="block w-full booking-input @error('package_id') border-red-500 @enderror">
                         <option value="">No Package (General Appointment)</option>
                         @foreach($packages as $package)
-                            <option value="{{ $package->id }}" data-price="{{ $package->final_price }}" data-tests="{{ $package->tests_count }}" {{ old('package_id') == $package->id ? 'selected' : '' }}>
+                            <option value="{{ $package->id }}" data-price="{{ $package->final_price }}" data-tests="{{ $package->tests_count }}" {{ old('package_id', request('package')) == $package->id ? 'selected' : '' }}>
                                 {{ $package->name }} - ₹{{ number_format($package->final_price, 2) }} ({{ $package->tests_count }} tests)
                             </option>
                         @endforeach
@@ -365,7 +387,8 @@
             @endif
 
             <!-- Appointment Details -->
-            <div class="bg-slate-50/80 rounded-2xl p-6 mb-6 border border-slate-200/60">
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
+                <div class="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-slate-50/90 to-transparent rounded-tr-full translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4">Appointment Details</h2>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -375,7 +398,7 @@
                             value="{{ old('appointment_date') }}" 
                             min="{{ date('Y-m-d') }}"
                             required
-                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('appointment_date') border-red-500 @enderror">
+                            class="block w-full booking-input @error('appointment_date') border-red-500 @enderror">
                         @error('appointment_date')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -386,7 +409,7 @@
                         @if(!empty($labUsesAppointmentSlots))
                             <label for="appointment_slot_id" class="block text-sm font-medium text-gray-700 mb-2">Appointment Time *</label>
                             <select name="appointment_slot_id" id="appointment_slot_id" required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('appointment_slot_id') border-red-500 @enderror">
+                                class="block w-full booking-input @error('appointment_slot_id') border-red-500 @enderror">
                                 <option value="">{{ old('appointment_date') ? __('Loading…') : __('Select a date first') }}</option>
                             </select>
                             @error('appointment_slot_id')
@@ -398,7 +421,7 @@
                             <input type="time" name="appointment_time" id="appointment_time" 
                                 value="{{ old('appointment_time') }}" 
                                 required
-                                class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('appointment_time') border-red-500 @enderror">
+                                class="block w-full booking-input @error('appointment_time') border-red-500 @enderror">
                             @error('appointment_time')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
@@ -413,7 +436,7 @@
                 <div class="mt-6">
                     <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Additional Notes (Optional)</label>
                     <textarea name="notes" id="notes" rows="4"
-                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('notes') border-red-500 @enderror"
+                        class="block w-full booking-input @error('notes') border-red-500 @enderror"
                         placeholder="Any special requirements or notes...">{{ old('notes') }}</textarea>
                     @error('notes')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -428,46 +451,92 @@
             @endif
 
             <!-- Helpful Information -->
-            <div class="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-xl mb-6">
+            <div class="bg-slate-50/90 border border-slate-200/80 p-5 rounded-2xl">
                 <div class="flex">
                     <div class="flex-shrink-0">
-                        <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg class="h-5 w-5" style="color: var(--primary-color);" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
                         </svg>
                     </div>
                     <div class="ml-3">
-                        <p class="text-sm text-blue-700">
+                        <p class="text-sm text-slate-700">
                             <strong>Note:</strong> If your selected time slot is already booked, you'll be notified and can choose another time. We'll confirm your appointment shortly after booking.
                         </p>
                     </div>
                 </div>
             </div>
 
-            <div class="flex items-center justify-center pt-6">
-                <button type="submit" class="w-full md:w-auto py-4 px-10 rounded-xl text-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 20px color-mix(in srgb, var(--primary-color) 40%, transparent);">
+            <div class="flex items-center justify-center pt-4">
+                <button type="submit" class="w-full md:w-auto py-4 px-12 rounded-2xl text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 24px color-mix(in srgb, var(--primary-color) 45%, transparent);">
                     Book Appointment
                 </button>
             </div>
         </form>
+            </div>
+
+            {{-- Sidebar: Trust & Benefits --}}
+            <aside class="lg:col-span-1 space-y-6">
+                <div class="sticky top-24 space-y-6">
+                    <div class="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/40 border border-slate-200/60">
+                        <h3 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                            <span class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-bold" style="background: var(--primary-color);">✓</span>
+                            Why Book With Us
+                        </h3>
+                        <ul class="space-y-3 text-slate-600 text-sm">
+                            <li class="flex items-start gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" style="color: var(--primary-color);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span>Accurate, NABL-accredited lab results</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" style="color: var(--primary-color);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span>Fast turnaround with digital reports</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" style="color: var(--primary-color);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span>Home collection available (where offered)</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <svg class="w-5 h-5 flex-shrink-0 mt-0.5" style="color: var(--primary-color);" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                                <span>Secure, confidential handling</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-6 text-white">
+                        <h3 class="font-display text-lg font-semibold mb-3">Need Help?</h3>
+                        <p class="text-slate-300 text-sm mb-4">Our team is here to assist you with bookings and reports.</p>
+                        <a href="{{ url('/contact') }}" class="inline-flex items-center gap-2 text-sm font-semibold text-white/90 hover:text-white transition-colors">
+                            Contact Us
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </aside>
+        </div>
     </div>
-</div>
+</section>
 
 @if(isset($packages) && $packages->count() > 0)
 <script>
-    document.getElementById('package_id')?.addEventListener('change', function() {
-        const selected = this.options[this.selectedIndex];
-        const infoDiv = document.getElementById('package-info');
-        
-        if (this.value && selected.getAttribute('data-price')) {
-            const testsCount = selected.getAttribute('data-tests');
-            const price = selected.getAttribute('data-price');
-            document.getElementById('package-tests-count').textContent = testsCount;
-            document.getElementById('package-price').textContent = parseFloat(price).toFixed(2);
-            infoDiv.style.display = 'block';
-        } else {
-            infoDiv.style.display = 'none';
+    (function () {
+        const sel = document.getElementById('package_id');
+        if (!sel) return;
+        function updatePackageInfo() {
+            const selected = sel.options[sel.selectedIndex];
+            const infoDiv = document.getElementById('package-info');
+            if (!infoDiv) return;
+            if (sel.value && selected.getAttribute('data-price')) {
+                const testsCount = selected.getAttribute('data-tests');
+                const price = selected.getAttribute('data-price');
+                document.getElementById('package-tests-count').textContent = testsCount;
+                document.getElementById('package-price').textContent = parseFloat(price).toFixed(2);
+                infoDiv.style.display = 'block';
+            } else {
+                infoDiv.style.display = 'none';
+            }
         }
-    });
+        sel.addEventListener('change', updatePackageInfo);
+        updatePackageInfo();
+    })();
 </script>
 @endif
 
