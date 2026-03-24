@@ -7,7 +7,9 @@ use App\Models\Payment;
 use App\Models\WebsiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\View\View;
+use Stripe\Exception\ApiErrorException;
 use Symfony\Component\HttpFoundation\Response;
 
 class PublicBillPaymentController extends Controller
@@ -17,7 +19,14 @@ class PublicBillPaymentController extends Controller
      */
     public function show(string $token): View|Response
     {
-        $bill = Bill::where('payment_token', $token)->with(['patient', 'lab'])->first();
+        $bill = Bill::where('payment_token', $token)
+            ->with([
+                'patient',
+                'lab',
+                'appointment',
+                'testOrders' => fn ($q) => $q->with(['test', 'package'])->orderBy('id'),
+            ])
+            ->first();
 
         if (!$bill) {
             abort(404, 'Payment link invalid or expired.');
@@ -37,6 +46,7 @@ class PublicBillPaymentController extends Controller
 
         return view('bills.pay-public', [
             'bill' => $bill,
+            'brandSettings' => $settings,
             'gateway' => $gateway,
             'paymentsEnabled' => $paymentsEnabled,
             'razorpayKey' => ($gateway === 'razorpay' && $settings) ? ($settings->payment_api_key ?? '') : '',
@@ -106,7 +116,7 @@ class PublicBillPaymentController extends Controller
         }
 
         $settings = WebsiteSetting::where('lab_id', $bill->lab_id)->first();
-        if (($settings->payment_gateway ?? '') !== 'razorpay' || empty($settings->payment_api_secret)) {
+        if (! $settings || ($settings->payment_gateway ?? '') !== 'razorpay' || empty($settings->payment_api_secret)) {
             if ($request->wantsJson()) {
                 return response()->json(['error' => 'Razorpay not configured.'], 400);
             }
@@ -163,14 +173,25 @@ class PublicBillPaymentController extends Controller
     {
         $request->validate(['token' => 'required|string']);
 
-        $bill = Bill::where('payment_token', $request->token)->first();
-        if (!$bill || $bill->due_amount <= 0) {
+        $bill = Bill::where('payment_token', $request->token)->with('patient')->first();
+        if (! $bill || $bill->due_amount <= 0) {
             return response()->json(['error' => 'Invalid or already paid bill.'], 400);
         }
 
         $settings = WebsiteSetting::where('lab_id', $bill->lab_id)->first();
-        if (($settings->payment_gateway ?? '') !== 'stripe' || empty($settings->payment_api_key) || empty($settings->payment_api_secret)) {
-            return response()->json(['error' => 'Stripe is not configured.'], 400);
+        if (! $settings || ($settings->payment_gateway ?? '') !== 'stripe') {
+            return response()->json(['error' => 'Stripe is not configured. Put your Stripe Secret key (starts with sk_) in the API Secret field under Settings → Payments.'], 400);
+        }
+
+        $secret = $settings->payment_api_secret ?? '';
+        if ($secret === '') {
+            return response()->json(['error' => 'Stripe is not configured. Put your Stripe Secret key (starts with sk_) in the API Secret field under Settings → Payments.'], 400);
+        }
+
+        if (! str_starts_with($secret, 'sk_')) {
+            return response()->json([
+                'error' => 'Invalid Stripe secret key. Use the Secret key from Stripe Dashboard (starts with sk_test_ or sk_live_), not the Publishable key (pk_). Paste it in API Secret.',
+            ], 400);
         }
 
         $amountCents = (int) round($bill->due_amount * 100);
@@ -178,30 +199,47 @@ class PublicBillPaymentController extends Controller
             return response()->json(['error' => 'Amount too small.'], 400);
         }
 
+        $patientLabel = $bill->patient?->name ?? 'Patient';
+
         try {
-            \Stripe\Stripe::setApiKey($settings->payment_api_secret);
+            // Classic Stripe PHP API (avoids StripeClient, which may be missing on some installs).
+            \Stripe\Stripe::setApiKey($secret);
             $session = \Stripe\Checkout\Session::create([
                 'payment_method_types' => ['card'],
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'inr',
                         'product_data' => [
-                            'name' => 'Bill ' . $bill->bill_number,
-                            'description' => 'Payment for bill #' . $bill->bill_number . ' - ' . $bill->patient->name,
+                            'name' => 'Bill '.$bill->bill_number,
+                            'description' => 'Payment for bill #'.$bill->bill_number.' — '.$patientLabel,
                         ],
                         'unit_amount' => $amountCents,
                     ],
                     'quantity' => 1,
                 ]],
                 'mode' => 'payment',
-                'success_url' => url('/pay-bill/' . $bill->payment_token . '/stripe-success?session_id={CHECKOUT_SESSION_ID}'),
-                'cancel_url' => url('/pay-bill/' . $bill->payment_token),
+                'success_url' => url('/pay-bill/'.$bill->payment_token.'/stripe-success?session_id={CHECKOUT_SESSION_ID}'),
+                'cancel_url' => url('/pay-bill/'.$bill->payment_token),
                 'metadata' => ['bill_id' => (string) $bill->id],
             ]);
 
             return response()->json(['url' => $session->url]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Could not create session: ' . $e->getMessage()], 500);
+        } catch (ApiErrorException $e) {
+            Log::warning('Stripe Checkout session failed', [
+                'bill_id' => $bill->id,
+                'stripe_code' => method_exists($e, 'getStripeCode') ? $e->getStripeCode() : null,
+                'message' => $e->getMessage(),
+            ]);
+
+            return response()->json([
+                'error' => $e->getMessage(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Stripe Checkout unexpected error', ['bill_id' => $bill->id, 'exception' => $e]);
+
+            return response()->json([
+                'error' => 'Could not start payment: '.$e->getMessage(),
+            ], 500);
         }
     }
 
@@ -218,7 +256,7 @@ class PublicBillPaymentController extends Controller
         $sessionId = $request->query('session_id');
         if ($sessionId && $bill->due_amount > 0) {
             $settings = WebsiteSetting::where('lab_id', $bill->lab_id)->first();
-            if (($settings->payment_gateway ?? '') === 'stripe' && !empty($settings->payment_api_secret)) {
+            if ($settings && ($settings->payment_gateway ?? '') === 'stripe' && ! empty($settings->payment_api_secret)) {
                 try {
                     \Stripe\Stripe::setApiKey($settings->payment_api_secret);
                     $session = \Stripe\Checkout\Session::retrieve($sessionId);

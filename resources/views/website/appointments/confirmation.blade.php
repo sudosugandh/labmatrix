@@ -114,6 +114,18 @@
                         </div>
                     @endif
 
+                    @if((! $appointment->package) && $appointment->tests && $appointment->tests->count() > 0)
+                        <div class="mt-6 rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-2">Tests you selected</p>
+                            <ul class="list-disc list-inside text-sm text-slate-800 space-y-1">
+                                @foreach($appointment->tests as $t)
+                                    <li>{{ $t->name }} <span class="text-slate-500 tabular-nums">(₹{{ number_format($t->price, 2) }})</span></li>
+                                @endforeach
+                            </ul>
+                            <p class="mt-2 text-xs text-slate-600">Test orders are created for these tests. Reports will be available when ready.</p>
+                        </div>
+                    @endif
+
                     @if($appointment->doctor)
                         <div class="mt-6 rounded-xl border border-slate-200/80 p-4 bg-white">
                             <p class="text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1">Referred by</p>

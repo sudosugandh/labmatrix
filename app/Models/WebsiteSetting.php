@@ -68,6 +68,7 @@ class WebsiteSetting extends Model
         'printer_type',
         'report_template_style',
         'payments_enabled',
+        'booking_require_payment',
         'payment_gateway',
         'payment_api_key',
         'payment_api_secret',
@@ -109,6 +110,7 @@ class WebsiteSetting extends Model
         'notifications_enabled' => 'boolean',
         'analytics_enabled' => 'boolean',
         'payments_enabled' => 'boolean',
+        'booking_require_payment' => 'boolean',
         'payment_test_mode' => 'boolean',
         'two_factor_enabled' => 'boolean',
         'ip_whitelist_enabled' => 'boolean',
@@ -153,5 +155,54 @@ class WebsiteSetting extends Model
                 'password_min_length' => 8,
             ]
         );
+    }
+
+    /**
+     * Lab intends to collect payment at booking (feature toggles on).
+     */
+    public static function wantsPayWhenBooking(?self $settings): bool
+    {
+        return $settings
+            && ($settings->payments_enabled ?? false)
+            && ($settings->booking_require_payment ?? false);
+    }
+
+    /**
+     * True when redirect to pay-bill after booking will work (matches PublicBillPaymentController requirements).
+     * PayPal is not supported on the public pay page.
+     */
+    public static function bookingPaymentRedirectReady(?self $settings): bool
+    {
+        if (! static::wantsPayWhenBooking($settings)) {
+            return false;
+        }
+        $gw = $settings->payment_gateway ?? '';
+        if (! in_array($gw, ['razorpay', 'stripe'], true)) {
+            return false;
+        }
+
+        return ! empty($settings->payment_api_key) && ! empty($settings->payment_api_secret);
+    }
+
+    /**
+     * User-facing hint when pay-at-booking is enabled but redirect cannot run (empty string if none).
+     */
+    public static function bookingPaymentSetupHint(?self $settings): string
+    {
+        if (! static::wantsPayWhenBooking($settings)) {
+            return '';
+        }
+        if (static::bookingPaymentRedirectReady($settings)) {
+            return '';
+        }
+        $gw = $settings->payment_gateway ?? '';
+        if ($gw === 'paypal' || $gw === '') {
+            return 'Online payment at booking requires Razorpay or Stripe (not PayPal). Open Settings → Payments, choose Razorpay or Stripe, and save your API Key and Secret.';
+        }
+        if (! in_array($gw, ['razorpay', 'stripe'], true)) {
+            return 'Configure Razorpay or Stripe under Settings → Payments to enable pay-at-booking.';
+        }
+
+        return 'Add both API Key and API Secret under Settings → Payments so the payment page can charge cards.';
     }
 }

@@ -52,6 +52,18 @@
             </div>
         @endif
 
+        @if(!empty($payAtBookingSetupHint ?? ''))
+            <div class="mb-8 flex items-start gap-3 p-5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-950 shadow-sm" role="alert">
+                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-700" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                </div>
+                <div>
+                    <p class="font-semibold text-amber-900">Payment at booking is not active yet</p>
+                    <p class="mt-1 text-sm text-amber-900/90 leading-relaxed">{{ $payAtBookingSetupHint }}</p>
+                </div>
+            </div>
+        @endif
+
         @if($errors->any())
             <div class="mb-8 flex items-start gap-3 p-5 rounded-2xl bg-red-50 border border-red-200/80 text-red-800 shadow-sm" role="alert">
                 <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
@@ -386,6 +398,37 @@
             </div>
             @endif
 
+            @if(isset($tests) && $tests->count() > 0)
+            <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden" id="individual-tests-section">
+                <h2 class="font-display text-lg font-semibold text-slate-900 mb-2 flex items-center">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Individual tests (optional)
+                </h2>
+                <p class="text-sm text-slate-600 mb-4">Select one or more tests, <strong>or</strong> choose a package above — not both. Leave empty for a general visit without pre-selected tests.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-72 overflow-y-auto pr-1 rounded-xl border border-slate-100 bg-slate-50/50 p-3">
+                    @foreach($tests as $test)
+                        <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 bg-white cursor-pointer hover:border-slate-300 transition-colors has-[:checked]:border-violet-500 has-[:checked]:ring-1 has-[:checked]:ring-violet-200">
+                            <input type="checkbox" name="test_ids[]" value="{{ $test->id }}" data-price="{{ $test->price }}"
+                                class="test-select-cb mt-1 rounded border-slate-300 text-violet-600 focus:ring-violet-500"
+                                {{ is_array(old('test_ids')) && in_array($test->id, old('test_ids', []), true) ? 'checked' : '' }}>
+                            <span class="text-sm text-slate-800"><span class="font-medium">{{ $test->name }}</span><br><span class="text-slate-500 tabular-nums">₹{{ number_format($test->price, 2) }}</span></span>
+                        </label>
+                    @endforeach
+                </div>
+                <p id="booking-estimated-line" class="mt-3 text-sm font-semibold text-slate-900" style="display: none;"></p>
+                @if(!empty($payAtBookingEnabled))
+                    <p class="mt-3 text-xs text-amber-900 bg-amber-50 border border-amber-200/80 rounded-xl px-3 py-2 leading-relaxed">
+                        <strong>Pay online:</strong> If you select a package or tests, you may be redirected to complete payment (card/UPI) before your confirmation page, when your lab has enabled this option.
+                    </p>
+                @endif
+                @error('test_ids')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+            @endif
+
             <!-- Appointment Details -->
             <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
                 <div class="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-slate-50/90 to-transparent rounded-tr-full translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
@@ -537,6 +580,70 @@
         sel.addEventListener('change', updatePackageInfo);
         updatePackageInfo();
     })();
+</script>
+@endif
+
+@if(isset($tests) && $tests->count() > 0)
+<script>
+(function () {
+    const pkg = document.getElementById('package_id');
+    const cbs = document.querySelectorAll('.test-select-cb');
+    const line = document.getElementById('booking-estimated-line');
+
+    function sumTests() {
+        let t = 0;
+        cbs.forEach(function (cb) {
+            if (cb.checked) t += parseFloat(cb.getAttribute('data-price') || '0', 10) || 0;
+        });
+        return t;
+    }
+
+    function refresh() {
+        const pkgPrice = pkg && pkg.value && pkg.selectedOptions[0]
+            ? parseFloat(pkg.selectedOptions[0].getAttribute('data-price') || '0', 10)
+            : 0;
+        const anyTest = Array.from(cbs).some(function (cb) { return cb.checked; });
+
+        if (pkg && pkg.value) {
+            cbs.forEach(function (cb) { cb.checked = false; });
+            if (line) {
+                line.style.display = 'block';
+                line.textContent = 'Estimated (package): ₹' + pkgPrice.toFixed(2);
+            }
+            return;
+        }
+        const s = sumTests();
+        if (line) {
+            if (s > 0) {
+                line.style.display = 'block';
+                line.textContent = 'Estimated (selected tests): ₹' + s.toFixed(2);
+            } else {
+                line.style.display = 'none';
+                line.textContent = '';
+            }
+        }
+    }
+
+    if (pkg) {
+        pkg.addEventListener('change', function () {
+            if (this.value) {
+                cbs.forEach(function (cb) { cb.checked = false; });
+            }
+            refresh();
+        });
+    }
+    cbs.forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            if (cb.checked && pkg) {
+                pkg.value = '';
+                const info = document.getElementById('package-info');
+                if (info) info.style.display = 'none';
+            }
+            refresh();
+        });
+    });
+    refresh();
+})();
 </script>
 @endif
 

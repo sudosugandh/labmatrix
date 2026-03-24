@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\ReportDownloadLink;
 use App\Models\Patient;
 use App\Models\Report;
 use App\Models\WebsiteSetting;
@@ -61,12 +62,16 @@ class PublicReportController extends Controller
                 ->with('error', 'No patient found with this phone number.');
         }
 
-        // Get reports for this patient - only released reports
+        // Get reports for this patient - only released reports (eager load to avoid N+1)
         $reports = Report::where('lab_id', currentLabId())
             ->where('patient_id', $patient->id)
             ->where('workflow_status', 'released')
             ->where('status', 'ready')
-            ->with(['testOrder.test', 'reportTests.test'])
+            ->with([
+                'testOrder.test',
+                'reportTests.test',
+                'reportTests.testOrder.test',
+            ])
             ->latest()
             ->get();
 
@@ -206,18 +211,41 @@ class PublicReportController extends Controller
                 ->with('error', 'Report not found or not available.');
         }
 
+        $report->load(['patient', 'lab', 'testOrder.test', 'reportTests.test']);
+
         $downloadUrl = route('public.reports.download', $report->id);
-        $labName = $report->lab->name ?? currentLab()?->name ?? 'Lab';
+        $settings = WebsiteSetting::getForCurrentLab();
+        $lab = $report->lab ?? Lab::find(currentLabId());
+
+        $patientName = $report->patient?->name ?? 'there';
+        $reportTitle = $report->report_name;
+        if (! $reportTitle && $report->reportTests && $report->reportTests->count() > 0) {
+            $reportTitle = $report->reportTests->pluck('test.name')->filter()->unique()->implode(', ');
+        }
+        if (! $reportTitle) {
+            $reportTitle = $report->testOrder?->test?->name ?? 'Laboratory report';
+        }
+
+        $labName = $lab?->name ?? currentLab()?->name ?? config('app.name');
+        $labPhone = $settings->contact_phone ?? $settings->phone ?? $lab?->phone;
+        $labEmail = $settings->contact_email ?? $settings->email ?? $lab?->email;
+        $labAddress = $settings->address ?? $lab?->address;
+        $brandTagline = $settings->hero_subtitle ?? null;
 
         try {
-            Mail::raw(
-                "Hello,\n\nYour diagnostic report download link from {$labName}:\n\n{$downloadUrl}\n\nThis link is for your use only. If you did not request this, please ignore this email.\n\n— {$labName}",
-                function ($message) use ($validated, $labName) {
-                    $message->to($validated['email'])
-                        ->subject("Your report download link – {$labName}");
-                }
-            );
+            Mail::to($validated['email'])->send(new ReportDownloadLink(
+                patientName: $patientName,
+                reportTitle: $reportTitle,
+                downloadUrl: $downloadUrl,
+                labName: $labName,
+                labPhone: $labPhone,
+                labEmail: $labEmail,
+                labAddress: $labAddress,
+                brandTagline: $brandTagline,
+            ));
         } catch (\Exception $e) {
+            \Log::error('Report download link email failed', ['exception' => $e->getMessage()]);
+
             return redirect()->back()->with('error', 'We could not send the email. Please try again or use the download button.');
         }
 

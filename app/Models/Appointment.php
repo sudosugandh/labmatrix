@@ -2,9 +2,13 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use App\Models\TestPackage;
 
 class Appointment extends Model
@@ -64,6 +68,24 @@ class Appointment extends Model
     }
 
     /**
+     * Tests selected at booking (individual tests) or synced from package.
+     */
+    public function tests(): BelongsToMany
+    {
+        return $this->belongsToMany(Test::class, 'appointment_test')->withTimestamps();
+    }
+
+    public function bill(): HasOne
+    {
+        return $this->hasOne(Bill::class, 'appointment_id');
+    }
+
+    public function testOrders(): HasMany
+    {
+        return $this->hasMany(TestOrder::class);
+    }
+
+    /**
      * Scope a query to only include appointments for the current lab.
      */
     public function scopeForCurrentLab($query)
@@ -84,5 +106,32 @@ class Appointment extends Model
             'no_show' => 'bg-yellow-100 text-yellow-800',
             default => 'bg-gray-100 text-gray-800',
         };
+    }
+
+    /**
+     * When the appointment slot starts (date + time in app timezone).
+     */
+    public function startsAt(): Carbon
+    {
+        $timeStr = strlen((string) $this->appointment_time) === 5
+            ? $this->appointment_time . ':00'
+            : $this->appointment_time;
+
+        return Carbon::parse($this->appointment_date->format('Y-m-d') . ' ' . $timeStr);
+    }
+
+    /**
+     * Public portal: patient may cancel only upcoming bookings (not after visit time has passed).
+     */
+    public function canBeCancelledByPatient(): bool
+    {
+        if (! in_array($this->status, ['scheduled', 'confirmed'], true)) {
+            return false;
+        }
+        if ($this->booking_source !== 'public') {
+            return false;
+        }
+
+        return $this->startsAt()->isFuture();
     }
 }

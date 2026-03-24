@@ -472,17 +472,24 @@
     <script>
         (function() {
             var loader = document.getElementById('page-loader');
-            var minTime = 600;
+            var minTime = 120;
             var start = Date.now();
+            var scheduled = false;
             function hideLoader() {
+                if (scheduled) return;
+                scheduled = true;
                 var elapsed = Date.now() - start;
                 var delay = Math.max(0, minTime - elapsed);
                 setTimeout(function() {
                     if (loader) loader.classList.add('hidden');
                 }, delay);
             }
-            if (document.readyState === 'complete') hideLoader();
-            else window.addEventListener('load', hideLoader);
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', hideLoader);
+            } else {
+                hideLoader();
+            }
+            window.addEventListener('load', hideLoader);
         })();
     </script>
     <script>

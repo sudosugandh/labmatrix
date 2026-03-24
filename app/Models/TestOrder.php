@@ -12,6 +12,7 @@ class TestOrder extends Model
     protected $fillable = [
         'lab_id',
         'patient_id',
+        'appointment_id',
         'test_id',
         'package_id',
         'doctor_id',
@@ -46,6 +47,11 @@ class TestOrder extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
     }
 
     public function test(): BelongsTo

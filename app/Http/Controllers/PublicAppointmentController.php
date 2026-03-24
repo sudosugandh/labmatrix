@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\AppointmentSlot;
+use App\Models\Bill;
 use App\Models\Patient;
 use App\Models\Doctor;
+use App\Models\Test;
 use App\Models\TestPackage;
 use App\Models\TestOrder;
 use App\Models\WebsiteSetting;
@@ -57,7 +59,14 @@ class PublicAppointmentController extends Controller
 
             $labUsesAppointmentSlots = AppointmentSlot::forCurrentLab()->active()->exists();
 
-            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'labUsesAppointmentSlots'));
+            $tests = Test::forCurrentLab()
+                ->orderBy('name')
+                ->get();
+
+            $payAtBookingEnabled = WebsiteSetting::bookingPaymentRedirectReady($settings);
+            $payAtBookingSetupHint = WebsiteSetting::bookingPaymentSetupHint($settings);
+
+            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'labUsesAppointmentSlots', 'tests', 'payAtBookingEnabled', 'payAtBookingSetupHint'));
         }
 
         // Show selection page
@@ -81,6 +90,8 @@ class PublicAppointmentController extends Controller
             'gender' => 'nullable|in:male,female,other',
             'appointment_date' => 'required|date|after_or_equal:today',
             'package_id' => 'nullable|exists:test_packages,id',
+            'test_ids' => 'nullable|array|max:100',
+            'test_ids.*' => 'integer|exists:tests,id',
             'doctor_selection' => 'required_if:booking_type,doctor|in:registered,not_registered',
             'doctor_id' => [
                 'required_if:doctor_selection,registered',
@@ -138,6 +149,34 @@ class PublicAppointmentController extends Controller
             'doctor_name.required_if' => 'Your name is required.',
             'doctor_phone.required_if' => 'Your phone number is required.',
         ]);
+
+        $selectedTestIds = array_values(array_unique(array_filter(array_map('intval', $validated['test_ids'] ?? []))));
+
+        $webSettings = WebsiteSetting::where('lab_id', $labId)->first();
+        if (WebsiteSetting::bookingPaymentRedirectReady($webSettings)) {
+            if (empty($validated['package_id']) && count($selectedTestIds) === 0) {
+                return back()
+                    ->withInput()
+                    ->withErrors([
+                        'booking_pay' => 'Select a health package or at least one test. Your lab requires payment when booking.',
+                    ]);
+            }
+        }
+
+        if (! empty($validated['package_id']) && count($selectedTestIds) > 0) {
+            return back()
+                ->withInput()
+                ->withErrors(['test_ids' => 'Choose either a health package or individual tests — not both.']);
+        }
+
+        if (count($selectedTestIds) > 0) {
+            $validCount = Test::where('lab_id', $labId)->whereIn('id', $selectedTestIds)->count();
+            if ($validCount !== count($selectedTestIds)) {
+                return back()
+                    ->withInput()
+                    ->withErrors(['test_ids' => 'One or more selected tests are invalid.']);
+            }
+        }
 
         $appointmentSlotId = null;
         $appointmentTime = null;
@@ -281,45 +320,14 @@ class PublicAppointmentController extends Controller
                 'created_by' => null, // Public booking, no user
             ]);
 
-            // Create notification for all admin users
-            try {
-                $notificationService = app(NotificationService::class);
-                $packageInfo = $package ? " (Package: {$package->name})" : "";
-                $appointmentDate = \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y');
-                $notificationService->createForAllUsers(
-                    'appointment',
-                    'New Appointment Booked',
-                    "New appointment booked by {$patient->name} on {$appointmentDate} at {$appointment->appointment_time}{$packageInfo}",
-                    route('appointments.show', $appointment),
-                    'calendar',
-                    'blue',
-                    ['appointment_id' => $appointment->id, 'patient_id' => $patient->id]
-                );
-            } catch (\Exception $e) {
-                \Log::error('Failed to create notification for appointment: ' . $e->getMessage());
-                // Don't fail the appointment booking if notification fails
-            }
-
-            // If doctor booking, also create test order with doctor reference
-            if ($validated['booking_type'] === 'doctor' && $package) {
-                // Update test orders to include doctor_id and referral_number
-                TestOrder::where('lab_id', $labId)
-                    ->where('patient_id', $patient->id)
-                    ->where('package_id', $package->id)
-                    ->whereNull('doctor_id')
-                    ->update([
-                        'doctor_id' => $validated['doctor_id'],
-                        'referral_number' => $validated['referral_number'] ?? null,
-                    ]);
-            }
-
-            // Auto-create test orders if package is selected
+            // Create test orders (package or individual tests)
+            $createdOrders = collect();
             if ($package) {
-                $orders = [];
                 foreach ($package->tests as $test) {
-                    $orders[] = [
+                    $createdOrders->push(TestOrder::create([
                         'lab_id' => $labId,
                         'patient_id' => $patient->id,
+                        'appointment_id' => $appointment->id,
                         'test_id' => $test->id,
                         'package_id' => $package->id,
                         'doctor_id' => $doctorId,
@@ -329,11 +337,85 @@ class PublicAppointmentController extends Controller
                         'report_status' => 'pending',
                         'price' => $test->price,
                         'final_price' => $test->price,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
+                    ]));
                 }
-                TestOrder::insert($orders);
+                $appointment->tests()->sync($package->tests->pluck('id')->all());
+            } elseif (count($selectedTestIds) > 0) {
+                $testsOrdered = Test::where('lab_id', $labId)->whereIn('id', $selectedTestIds)->orderBy('name')->get();
+                foreach ($testsOrdered as $test) {
+                    $createdOrders->push(TestOrder::create([
+                        'lab_id' => $labId,
+                        'patient_id' => $patient->id,
+                        'appointment_id' => $appointment->id,
+                        'test_id' => $test->id,
+                        'package_id' => null,
+                        'doctor_id' => $doctorId,
+                        'referral_number' => $referralNumber,
+                        'status' => 'pending',
+                        'sample_status' => 'pending',
+                        'report_status' => 'pending',
+                        'price' => $test->price,
+                        'final_price' => $test->price,
+                    ]));
+                }
+                $appointment->tests()->sync($selectedTestIds);
+            }
+
+            if ($validated['booking_type'] === 'doctor' && $doctorId && $createdOrders->isNotEmpty()) {
+                TestOrder::whereIn('id', $createdOrders->pluck('id'))->update([
+                    'doctor_id' => $doctorId,
+                    'referral_number' => $referralNumber,
+                ]);
+            }
+
+            $gatewayOk = WebsiteSetting::bookingPaymentRedirectReady($webSettings);
+
+            $subtotal = round((float) $createdOrders->sum(fn ($o) => (float) $o->final_price), 2);
+            $redirectToPaymentUrl = null;
+
+            if ($gatewayOk && $subtotal >= 1.0 && $createdOrders->isNotEmpty()) {
+                $bill = Bill::create([
+                    'lab_id' => $labId,
+                    'patient_id' => $patient->id,
+                    'appointment_id' => $appointment->id,
+                    'bill_number' => Bill::generateBillNumber(),
+                    'bill_date' => now()->toDateString(),
+                    'subtotal' => $subtotal,
+                    'discount' => 0,
+                    'tax' => 0,
+                    'total' => $subtotal,
+                    'paid_amount' => 0,
+                    'due_amount' => $subtotal,
+                    'status' => 'pending',
+                    'notes' => 'Online booking — appointment #'.str_pad((string) $appointment->id, 6, '0', STR_PAD_LEFT),
+                    'created_by' => null,
+                ]);
+                $bill->ensurePaymentToken();
+                foreach ($createdOrders as $order) {
+                    $order->update(['bill_id' => $bill->id]);
+                }
+                $redirectToPaymentUrl = $bill->getPaymentLinkUrl();
+            }
+
+            // Create notification for all admin users
+            try {
+                $notificationService = app(NotificationService::class);
+                $bookingExtra = $package ? " (Package: {$package->name})" : '';
+                if (! $package && $createdOrders->isNotEmpty()) {
+                    $bookingExtra = ' ('.$createdOrders->count().' test(s) selected)';
+                }
+                $appointmentDate = \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y');
+                $notificationService->createForAllUsers(
+                    'appointment',
+                    'New Appointment Booked',
+                    "New appointment booked by {$patient->name} on {$appointmentDate} at {$appointment->appointment_time}{$bookingExtra}",
+                    route('appointments.show', $appointment),
+                    'calendar',
+                    'blue',
+                    ['appointment_id' => $appointment->id, 'patient_id' => $patient->id]
+                );
+            } catch (\Exception $e) {
+                \Log::error('Failed to create notification for appointment: ' . $e->getMessage());
             }
 
             DB::commit();
@@ -344,6 +426,11 @@ class PublicAppointmentController extends Controller
                 $whatsappService->sendAppointmentBooked($appointment);
             } catch (\Exception $e) {
                 \Log::error('WhatsApp notification failed: ' . $e->getMessage());
+            }
+
+            if ($redirectToPaymentUrl) {
+                return redirect()->to($redirectToPaymentUrl)
+                    ->with('info', 'Complete your secure payment to finish booking charges for your selected tests.');
             }
 
             return redirect()
@@ -380,7 +467,7 @@ class PublicAppointmentController extends Controller
         
         $menuItems = $menu ? $menu->items : collect();
 
-        $appointment->load(['patient', 'package', 'doctor']);
+        $appointment->load(['patient', 'package', 'doctor', 'tests']);
 
         return view('website.appointments.confirmation', compact('appointment', 'settings', 'menuItems'));
     }
@@ -460,7 +547,7 @@ class PublicAppointmentController extends Controller
         
         $menuItems = $menu ? $menu->items : collect();
 
-        $appointment->load(['patient', 'package', 'doctor']);
+        $appointment->load(['patient', 'package.tests', 'doctor']);
 
         return view('website.appointments.show', compact('appointment', 'settings', 'menuItems'));
     }
@@ -475,14 +562,8 @@ class PublicAppointmentController extends Controller
             abort(404);
         }
 
-        // Only allow cancellation of scheduled or confirmed appointments
-        if (!in_array($appointment->status, ['scheduled', 'confirmed'])) {
-            return back()->with('error', 'This appointment cannot be cancelled.');
-        }
-
-        // Only allow patients to cancel their own public bookings
-        if ($appointment->booking_source !== 'public') {
-            return back()->with('error', 'You can only cancel appointments booked through the public portal.');
+        if (! $appointment->canBeCancelledByPatient()) {
+            return back()->with('error', 'This appointment cannot be cancelled. It may have already passed, or cancellation is not available for this booking.');
         }
 
         $appointment->update([

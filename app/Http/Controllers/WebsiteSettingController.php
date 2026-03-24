@@ -152,6 +152,7 @@ class WebsiteSettingController extends Controller
                     'notifications_enabled' => 'nullable|boolean',
                     'analytics_enabled' => 'nullable|boolean',
                     'payments_enabled' => 'nullable|boolean',
+                    'booking_require_payment' => 'nullable|boolean',
                 ];
                 break;
 

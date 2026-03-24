@@ -153,6 +153,7 @@ class AppointmentController extends Controller
                     $orders[] = [
                         'lab_id' => currentLabId(),
                         'patient_id' => $patient->id,
+                        'appointment_id' => $appointment->id,
                         'test_id' => $test->id,
                         'package_id' => $package->id,
                         'status' => 'pending',
@@ -269,19 +270,17 @@ class AppointmentController extends Controller
 
             // Auto-create test orders when status changes to 'confirmed' and package exists
             if ($validated['status'] === 'confirmed' && $package && $oldStatus !== 'confirmed') {
-                // Check if orders already exist for this appointment's package
-                $existingOrders = TestOrder::where('lab_id', currentLabId())
-                    ->where('patient_id', $patient->id)
-                    ->where('package_id', $package->id)
-                    ->whereNull('bill_id')
+                $existingForAppointment = TestOrder::where('lab_id', currentLabId())
+                    ->where('appointment_id', $appointment->id)
                     ->count();
 
-                if ($existingOrders === 0) {
+                if ($existingForAppointment === 0) {
                     $orders = [];
                     foreach ($package->tests as $test) {
                         $orders[] = [
                             'lab_id' => currentLabId(),
                             'patient_id' => $patient->id,
+                            'appointment_id' => $appointment->id,
                             'test_id' => $test->id,
                             'package_id' => $package->id,
                             'status' => 'pending',
@@ -381,19 +380,17 @@ class AppointmentController extends Controller
                 $appointment->load(['package.tests', 'patient']);
                 
                 if ($appointment->package && $appointment->patient) {
-                    // Check if orders already exist for this appointment's package
-                    $existingOrders = TestOrder::where('lab_id', currentLabId())
-                        ->where('patient_id', $appointment->patient_id)
-                        ->where('package_id', $appointment->package_id)
-                        ->whereNull('bill_id')
+                    $existingForAppointment = TestOrder::where('lab_id', currentLabId())
+                        ->where('appointment_id', $appointment->id)
                         ->count();
 
-                    if ($existingOrders === 0) {
+                    if ($existingForAppointment === 0) {
                         $orders = [];
                         foreach ($appointment->package->tests as $test) {
                             $orders[] = [
                                 'lab_id' => currentLabId(),
                                 'patient_id' => $appointment->patient_id,
+                                'appointment_id' => $appointment->id,
                                 'test_id' => $test->id,
                                 'package_id' => $appointment->package_id,
                                 'status' => 'pending',

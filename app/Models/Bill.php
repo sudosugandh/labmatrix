@@ -11,6 +11,7 @@ class Bill extends Model
     protected $fillable = [
         'lab_id',
         'patient_id',
+        'appointment_id',
         'bill_number',
         'payment_token',
         'bill_date',
@@ -43,6 +44,11 @@ class Bill extends Model
     public function patient(): BelongsTo
     {
         return $this->belongsTo(Patient::class);
+    }
+
+    public function appointment(): BelongsTo
+    {
+        return $this->belongsTo(Appointment::class);
     }
 
     public function createdBy(): BelongsTo

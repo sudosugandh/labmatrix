@@ -51,6 +51,14 @@ Route::post('/patient-reports', [PublicReportController::class, 'results'])->nam
 Route::get('/patient-reports/{id}/download', [PublicReportController::class, 'download'])
     ->where('id', '[0-9]+')
     ->name('public.reports.download');
+// GET: bookmark/refresh hits this URL — redirect (POST-only would otherwise 404)
+Route::get('/patient-reports/email-link', function () {
+    return redirect()
+        ->route('public.reports.search')
+        ->with('info', 'Search for your reports first, then use “Email link” on a report to receive a download link.');
+})->name('public.reports.email-link.get');
+Route::post('/patient-reports/email-link', [PublicReportController::class, 'sendReportLinkByEmail'])
+    ->name('public.reports.email-link');
 
 // Public Packages Display (must be before dynamic slug route and admin routes)
 Route::get('/packages', [PublicPackageController::class, 'index'])->name('public.packages.index');

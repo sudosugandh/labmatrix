@@ -70,6 +70,12 @@
             </div>
         @endif
 
+        @if(session('info'))
+            <div class="mt-6 rounded-lg border border-sky-200 bg-sky-50 p-4 text-sky-900 text-sm" role="status">
+                {{ session('info') }}
+            </div>
+        @endif
+
         <p class="mt-6 text-center text-sm text-gray-500">
             Can’t find your reports? <a href="{{ url('/contact') }}" class="font-medium" style="color: var(--primary-color);">Contact us</a>
         </p>
