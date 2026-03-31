@@ -14,6 +14,8 @@ class WebsiteSetting extends Model
         'logo',
         'favicon',
         'primary_color',
+        'theme_preset',
+        'secondary_color',
         'phone',
         'email',
         'contact_email',
@@ -139,6 +141,7 @@ class WebsiteSetting extends Model
             [
                 'brand_name' => $lab?->name ?? 'HealthMatrix',
                 'primary_color' => '#3B82F6',
+                'theme_preset' => 'violet',
                 'hero_title' => 'Welcome to ' . ($lab?->name ?? 'HealthMatrix'),
                 'hero_subtitle' => 'Your trusted diagnostic center',
                 'online_booking_enabled' => true,

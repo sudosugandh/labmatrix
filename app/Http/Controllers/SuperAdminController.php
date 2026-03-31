@@ -295,6 +295,7 @@ class SuperAdminController extends Controller
             [
                 'brand_name' => $lab->name,
                 'primary_color' => '#3B82F6',
+                'theme_preset' => 'violet',
             ]
         );
 
@@ -304,9 +305,14 @@ class SuperAdminController extends Controller
             'email' => 'nullable|email|max:255',
             'address' => 'nullable|string',
             'primary_color' => 'nullable|string|max:7',
+            'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
         ]);
 
         $settings->update($validated);
+
+        if (! empty($validated['brand_name'])) {
+            $lab->update(['name' => $validated['brand_name']]);
+        }
 
         return redirect()->back()
             ->with('success', 'Lab settings updated successfully.');

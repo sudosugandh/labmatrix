@@ -24,6 +24,34 @@
         </a>
     </div>
 
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-lg font-semibold text-slate-900">Homepage hero</h3>
+            <p class="text-sm text-slate-500">Text over the banner. Banner carousel is configured below (Homepage Banner).</p>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label for="hero_title" class="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                <input type="text" name="hero_title" id="hero_title" value="{{ old('hero_title', $settings->hero_title ?? '') }}" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5">
+            </div>
+            <div>
+                <label for="hero_subtitle" class="block text-sm font-medium text-slate-700 mb-2">Subtitle</label>
+                <textarea name="hero_subtitle" id="hero_subtitle" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5">{{ old('hero_subtitle', $settings->hero_subtitle ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="hero_image" class="block text-sm font-medium text-slate-700 mb-2">Hero image (optional fallback)</label>
+                <input type="file" name="hero_image" id="hero_image" accept="image/*" class="block w-full text-sm text-slate-600">
+                @if($settings->hero_image)
+                    <p class="mt-2 text-xs text-slate-500">Current: <a href="{{ asset('storage/' . $settings->hero_image) }}" class="text-violet-600 hover:underline" target="_blank">view</a></p>
+                @endif
+            </div>
+            <div>
+                <label for="footer_text" class="block text-sm font-medium text-slate-700 mb-2">Footer line (plain text)</label>
+                <textarea name="footer_text" id="footer_text" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5" placeholder="Short tagline or copyright">{{ old('footer_text', $settings->footer_text ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Header content --}}
         <div class="group relative bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 overflow-hidden">

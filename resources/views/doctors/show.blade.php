@@ -156,6 +156,32 @@
             </dl>
         </x-detail-card>
 
+        <!-- Referral link (doctor portal & public booking) -->
+        <x-detail-card 
+            title="Referral link" 
+            gradient="from-sky-500 to-cyan-600"
+        >
+            <x-slot name="icon">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path>
+                </svg>
+            </x-slot>
+            <p class="text-sm text-gray-600 mb-4">Share this link so online bookings are credited to this doctor. Doctors can sign in at <span class="font-mono text-xs bg-gray-100 px-1 rounded">/doctor-portal/login</span> with phone + portal password.</p>
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-gray-500 mb-1">Referral code</dt>
+                    <dd class="font-mono font-semibold text-gray-900">{{ $doctor->referral_code ?? '—' }}</dd>
+                </div>
+                <div class="md:col-span-2">
+                    <dt class="text-gray-500 mb-1">Booking URL</dt>
+                    <dd class="flex flex-col sm:flex-row sm:items-center gap-2">
+                        <code class="flex-1 text-xs font-mono bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 break-all">{{ $doctor->referralBookingUrl() }}</code>
+                        <button type="button" onclick="navigator.clipboard.writeText(@json($doctor->referralBookingUrl()))" class="shrink-0 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg">Copy</button>
+                    </dd>
+                </div>
+            </dl>
+        </x-detail-card>
+
         <!-- Commission Information -->
         <x-detail-card 
             title="Commission Information" 

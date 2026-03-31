@@ -31,7 +31,7 @@
                     <h2 class="text-2xl md:text-3xl font-bold text-slate-900">Settings</h2>
                     <p class="text-slate-600 mt-1">Manage your lab configuration and preferences</p>
                 </div>
-                <button type="submit" form="settings-form" class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg shadow-violet-500/25 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 focus:ring-4 focus:ring-violet-500/30 transition-all">
+                <button type="submit" form="settings-form" class="admin-settings-save inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-white text-sm font-semibold shadow-lg focus:ring-4 transition-all" style="background: linear-gradient(135deg, var(--admin-primary, #7c3aed) 0%, color-mix(in srgb, var(--admin-primary, #7c3aed) 75%, var(--admin-secondary, #6d28d9)) 100%); box-shadow: 0 10px 25px color-mix(in srgb, var(--admin-primary, #7c3aed) 35%, transparent); --tw-ring-color: color-mix(in srgb, var(--admin-primary, #7c3aed) 40%, transparent);">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
                     Save Changes
                 </button>
@@ -43,13 +43,6 @@
         <!-- Tabs Navigation -->
         <div class="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-violet-50/30 overflow-x-auto overflow-y-hidden">
             <nav class="flex -mb-px shrink-0 min-w-max px-4" aria-label="Tabs">
-                <a href="{{ route('admin.settings.index', ['tab' => 'general']) }}" 
-                   class="{{ $activeTab === 'general' ? 'border-violet-500 text-violet-600 bg-white/80 shadow-sm' : 'border-transparent text-slate-600 hover:text-violet-600 hover:border-violet-300' }} whitespace-nowrap py-4 px-5 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
-                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    General
-                </a>
                 <a href="{{ route('admin.settings.index', ['tab' => 'branding']) }}" 
                    class="{{ $activeTab === 'branding' ? 'border-violet-500 text-violet-600 bg-white/80 shadow-sm' : 'border-transparent text-slate-600 hover:text-violet-600 hover:border-violet-300' }} whitespace-nowrap py-4 px-5 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -57,12 +50,12 @@
                     </svg>
                     Branding
                 </a>
-                <a href="{{ route('admin.settings.index', ['tab' => 'contact']) }}" 
-                   class="{{ $activeTab === 'contact' ? 'border-violet-500 text-violet-600 bg-white/80 shadow-sm' : 'border-transparent text-slate-600 hover:text-violet-600 hover:border-violet-300' }} whitespace-nowrap py-4 px-5 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
+                <a href="{{ route('admin.settings.index', ['tab' => 'general']) }}" 
+                   class="{{ $activeTab === 'general' ? 'border-violet-500 text-violet-600 bg-white/80 shadow-sm' : 'border-transparent text-slate-600 hover:text-violet-600 hover:border-violet-300' }} whitespace-nowrap py-4 px-5 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    Contact
+                    General
                 </a>
                 <a href="{{ route('admin.settings.index', ['tab' => 'features']) }}" 
                    class="{{ $activeTab === 'features' ? 'border-violet-500 text-violet-600 bg-white/80 shadow-sm' : 'border-transparent text-slate-600 hover:text-violet-600 hover:border-violet-300' }} whitespace-nowrap py-4 px-5 border-b-2 font-medium text-sm flex items-center gap-2 transition-colors">
@@ -142,12 +135,10 @@
             })();
             </script>
 
-            @if($activeTab === 'general')
-                @include('admin.settings.tabs.general')
-            @elseif($activeTab === 'branding')
+            @if($activeTab === 'branding')
                 @include('admin.settings.tabs.branding')
-            @elseif($activeTab === 'contact')
-                @include('admin.settings.tabs.contact')
+            @elseif($activeTab === 'general')
+                @include('admin.settings.tabs.general')
             @elseif($activeTab === 'features')
                 @include('admin.settings.tabs.features')
             @elseif($activeTab === 'printer')

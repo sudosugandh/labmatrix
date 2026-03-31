@@ -6,7 +6,7 @@
     <title>Test Report</title>
     <style>
         @page {
-            margin: 12mm;
+            margin: 9mm 11mm;
             size: A4;
         }
         
@@ -18,9 +18,9 @@
         
         body {
             font-family: 'DejaVu Sans', Arial, Helvetica, sans-serif;
-            font-size: 9pt;
+            font-size: 8.5pt;
             color: #000;
-            line-height: 1.35;
+            line-height: 1.3;
         }
         
         /* Header - Dr Lal PathLabs style */
@@ -70,9 +70,9 @@
         .patient-meta {
             display: table;
             width: 100%;
-            margin-bottom: 12px;
+            margin-bottom: 6px;
             border: 1px solid #e5e7eb;
-            padding: 8px 10px;
+            padding: 5px 8px;
             background-color: #fafafa;
         }
         
@@ -122,20 +122,20 @@
         /* Report title */
         .report-heading {
             text-align: center;
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
-            margin: 10px 0 12px 0;
+            margin: 5px 0 6px 0;
             text-transform: none;
         }
         
         /* Test results table - Dr Lal style */
         .test-group-header {
             background-color: #e5e7eb;
-            padding: 6px 10px;
+            padding: 4px 8px;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 8.5pt;
             text-transform: uppercase;
-            margin-top: 10px;
+            margin-top: 6px;
         }
         
         .test-group-header:first-child {
@@ -149,17 +149,17 @@
         }
         
         .results-table th {
-            padding: 6px 8px;
+            padding: 3px 6px;
             text-align: left;
             font-weight: bold;
-            font-size: 8pt;
+            font-size: 7.5pt;
             border-bottom: 1px solid #000;
             border-top: 1px solid #000;
         }
         
         .results-table td {
-            padding: 5px 8px;
-            font-size: 8.5pt;
+            padding: 3px 6px;
+            font-size: 8pt;
             border-bottom: 1px solid #e5e7eb;
         }
         
@@ -206,7 +206,7 @@
         
         /* Notes section */
         .notes-section {
-            margin: 12px 0;
+            margin: 6px 0;
         }
         
         .notes-title {
@@ -222,7 +222,7 @@
         
         /* Interpretation - monospace for tables */
         .interpretation-section {
-            margin: 12px 0;
+            margin: 6px 0;
         }
         
         .interpretation-title {
@@ -241,8 +241,8 @@
         .signatures-grid {
             display: table;
             width: 100%;
-            margin-top: 20px;
-            margin-bottom: 15px;
+            margin-top: 8px;
+            margin-bottom: 6px;
         }
         
         .signatures-row {
@@ -252,7 +252,7 @@
         .signature-cell {
             display: table-cell;
             width: 25%;
-            padding: 8px;
+            padding: 4px;
             text-align: center;
             vertical-align: top;
             border: 1px solid #e5e7eb;
@@ -283,7 +283,7 @@
         /* Footer */
         .footer-qr-barcode {
             text-align: center;
-            margin: 15px 0 8px 0;
+            margin: 6px 0 4px 0;
         }
         
         .footer-qr {
@@ -293,18 +293,18 @@
         
         .page-number {
             text-align: right;
-            font-size: 8pt;
+            font-size: 7.5pt;
             color: #64748b;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
         
         .footer-contact-bar {
             background-color: #fcd34d;
-            padding: 8px 12px;
-            font-size: 8pt;
+            padding: 5px 10px;
+            font-size: 7.5pt;
             font-weight: bold;
             text-align: center;
-            margin-top: 10px;
+            margin-top: 4px;
         }
         
         .footer-contact-details {
@@ -313,25 +313,9 @@
             font-weight: normal;
         }
         
-        /* Watermark */
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-35deg);
-            font-size: 72pt;
-            color: rgba(220, 38, 38, 0.08);
-            z-index: -1;
-            font-weight: bold;
-            pointer-events: none;
-        }
     </style>
 </head>
 <body>
-    @if(isset($showWatermark) && $showWatermark)
-    <div class="watermark">SAMPLE REPORT</div>
-    @endif
-    
     <!-- Header -->
     <div class="header">
         <div class="header-left">

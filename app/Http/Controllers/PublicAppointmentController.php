@@ -5,14 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\AppointmentSlot;
 use App\Models\Bill;
-use App\Models\Patient;
 use App\Models\Doctor;
-use App\Models\Test;
-use App\Models\TestPackage;
-use App\Models\TestOrder;
-use App\Models\WebsiteSetting;
 use App\Models\Menu;
+use App\Models\Patient;
+use App\Models\Test;
+use App\Models\TestOrder;
+use App\Models\TestPackage;
+use App\Models\WebsiteSetting;
 use App\Services\NotificationService;
+use App\Services\WhatsAppService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,12 +29,12 @@ class PublicAppointmentController extends Controller
     public function create(Request $request)
     {
         $settings = WebsiteSetting::getForCurrentLab();
-        
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         // If booking_type is set, show the booking form
@@ -66,7 +67,15 @@ class PublicAppointmentController extends Controller
             $payAtBookingEnabled = WebsiteSetting::bookingPaymentRedirectReady($settings);
             $payAtBookingSetupHint = WebsiteSetting::bookingPaymentSetupHint($settings);
 
-            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'labUsesAppointmentSlots', 'tests', 'payAtBookingEnabled', 'payAtBookingSetupHint'));
+            $referralDoctor = null;
+            if ($request->filled('ref')) {
+                $referralDoctor = Doctor::where('lab_id', currentLabId())
+                    ->where('referral_code', $request->get('ref'))
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'labUsesAppointmentSlots', 'tests', 'payAtBookingEnabled', 'payAtBookingSetupHint', 'referralDoctor'));
         }
 
         // Show selection page
@@ -100,7 +109,7 @@ class PublicAppointmentController extends Controller
                     if ($request->input('doctor_selection') === 'registered' && empty($value)) {
                         $fail('Please select your name from the list.');
                     }
-                    if (!empty($value) && !\App\Models\Doctor::where('id', $value)->exists()) {
+                    if (! empty($value) && ! Doctor::where('id', $value)->exists()) {
                         $fail('Selected doctor does not exist.');
                     }
                 },
@@ -121,8 +130,8 @@ class PublicAppointmentController extends Controller
                         $file = $request->file($attribute);
                         $allowedMimes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
                         $allowedExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
-                        
-                        if (!in_array($file->getMimeType(), $allowedMimes) && !in_array(strtolower($file->getClientOriginalExtension()), $allowedExtensions)) {
+
+                        if (! in_array($file->getMimeType(), $allowedMimes) && ! in_array(strtolower($file->getClientOriginalExtension()), $allowedExtensions)) {
                             $fail('The prescription file must be a file of type: pdf, jpg, jpeg, png.');
                         }
                         if ($file->getSize() > 5120 * 1024) { // 5MB in bytes
@@ -132,6 +141,7 @@ class PublicAppointmentController extends Controller
                 },
             ],
             'notes' => 'nullable|string|max:1000',
+            'ref' => 'nullable|string|max:32',
         ];
 
         if ($hasActiveSlots) {
@@ -187,7 +197,7 @@ class PublicAppointmentController extends Controller
                 ->where('is_active', true)
                 ->first();
 
-            if (!$slot) {
+            if (! $slot) {
                 return back()->withInput()->withErrors(['appointment_slot_id' => 'Invalid or inactive time slot.']);
             }
 
@@ -231,7 +241,7 @@ class PublicAppointmentController extends Controller
                 ->where('phone', $validated['phone'])
                 ->first();
 
-            if (!$patient) {
+            if (! $patient) {
                 $patient = Patient::create([
                     'lab_id' => $labId,
                     'name' => $validated['name'],
@@ -252,14 +262,14 @@ class PublicAppointmentController extends Controller
 
             // Verify package belongs to current lab if provided
             $package = null;
-            if (!empty($validated['package_id'])) {
+            if (! empty($validated['package_id'])) {
                 $package = TestPackage::where('id', $validated['package_id'])
                     ->where('lab_id', $labId)
                     ->where('is_active', true)
                     ->with('tests')
                     ->first();
-                
-                if (!$package) {
+
+                if (! $package) {
                     return back()
                         ->withInput()
                         ->withErrors(['package_id' => 'Selected package is invalid or not available.']);
@@ -269,7 +279,7 @@ class PublicAppointmentController extends Controller
             // Handle doctor registration if not registered
             $doctorId = null;
             $referralNumber = null;
-            
+
             if ($validated['booking_type'] === 'doctor') {
                 if ($validated['doctor_selection'] === 'registered') {
                     $doctorId = $validated['doctor_id'];
@@ -292,11 +302,24 @@ class PublicAppointmentController extends Controller
                 }
             }
 
+            $referralDoctorId = null;
+            $refDoctorFromLink = null;
+            if ($validated['booking_type'] === 'patient' && $request->filled('ref')) {
+                $refDoctorFromLink = Doctor::where('lab_id', $labId)
+                    ->where('referral_code', $request->input('ref'))
+                    ->where('is_active', true)
+                    ->first();
+                if ($refDoctorFromLink) {
+                    $referralDoctorId = $refDoctorFromLink->id;
+                }
+            }
+            $orderDoctorId = $doctorId ?? $referralDoctorId;
+
             // Handle prescription file upload
             $prescriptionFilePath = null;
             if ($request->hasFile('prescription_file')) {
                 $file = $request->file('prescription_file');
-                $fileName = 'prescriptions/' . $labId . '/' . time() . '_' . $file->getClientOriginalName();
+                $fileName = 'prescriptions/'.$labId.'/'.time().'_'.$file->getClientOriginalName();
                 $prescriptionFilePath = $file->storeAs('public', $fileName);
                 // Remove 'public/' prefix for database storage
                 $prescriptionFilePath = str_replace('public/', '', $prescriptionFilePath);
@@ -307,8 +330,8 @@ class PublicAppointmentController extends Controller
                 'lab_id' => $labId,
                 'patient_id' => $patient->id,
                 'doctor_id' => $doctorId,
-                'referring_doctor_name' => $validated['referring_doctor_name'] ?? null,
-                'referring_doctor_phone' => $validated['referring_doctor_phone'] ?? null,
+                'referring_doctor_name' => $validated['referring_doctor_name'] ?? $refDoctorFromLink?->name,
+                'referring_doctor_phone' => $validated['referring_doctor_phone'] ?? $refDoctorFromLink?->phone,
                 'prescription_file' => $prescriptionFilePath,
                 'package_id' => $package ? $package->id : null,
                 'appointment_date' => $validated['appointment_date'],
@@ -330,7 +353,7 @@ class PublicAppointmentController extends Controller
                         'appointment_id' => $appointment->id,
                         'test_id' => $test->id,
                         'package_id' => $package->id,
-                        'doctor_id' => $doctorId,
+                        'doctor_id' => $orderDoctorId,
                         'referral_number' => $referralNumber,
                         'status' => 'pending',
                         'sample_status' => 'pending',
@@ -349,7 +372,7 @@ class PublicAppointmentController extends Controller
                         'appointment_id' => $appointment->id,
                         'test_id' => $test->id,
                         'package_id' => null,
-                        'doctor_id' => $doctorId,
+                        'doctor_id' => $orderDoctorId,
                         'referral_number' => $referralNumber,
                         'status' => 'pending',
                         'sample_status' => 'pending',
@@ -404,7 +427,7 @@ class PublicAppointmentController extends Controller
                 if (! $package && $createdOrders->isNotEmpty()) {
                     $bookingExtra = ' ('.$createdOrders->count().' test(s) selected)';
                 }
-                $appointmentDate = \Carbon\Carbon::parse($appointment->appointment_date)->format('M d, Y');
+                $appointmentDate = Carbon::parse($appointment->appointment_date)->format('M d, Y');
                 $notificationService->createForAllUsers(
                     'appointment',
                     'New Appointment Booked',
@@ -415,17 +438,17 @@ class PublicAppointmentController extends Controller
                     ['appointment_id' => $appointment->id, 'patient_id' => $patient->id]
                 );
             } catch (\Exception $e) {
-                \Log::error('Failed to create notification for appointment: ' . $e->getMessage());
+                \Log::error('Failed to create notification for appointment: '.$e->getMessage());
             }
 
             DB::commit();
 
             // Send WhatsApp notification
             try {
-                $whatsappService = app(\App\Services\WhatsAppService::class);
+                $whatsappService = app(WhatsAppService::class);
                 $whatsappService->sendAppointmentBooked($appointment);
             } catch (\Exception $e) {
-                \Log::error('WhatsApp notification failed: ' . $e->getMessage());
+                \Log::error('WhatsApp notification failed: '.$e->getMessage());
             }
 
             if ($redirectToPaymentUrl) {
@@ -438,13 +461,14 @@ class PublicAppointmentController extends Controller
                 ->with('success', 'Appointment booked successfully!');
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Appointment booking error: ' . $e->getMessage(), [
+            \Log::error('Appointment booking error: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request_data' => $request->all()
+                'request_data' => $request->all(),
             ]);
+
             return back()
                 ->withInput()
-                ->withErrors(['error' => 'Failed to book appointment: ' . $e->getMessage()]);
+                ->withErrors(['error' => 'Failed to book appointment: '.$e->getMessage()]);
         }
     }
 
@@ -459,12 +483,12 @@ class PublicAppointmentController extends Controller
         }
 
         $settings = WebsiteSetting::getForCurrentLab();
-        
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         $appointment->load(['patient', 'package', 'doctor', 'tests']);
@@ -478,12 +502,12 @@ class PublicAppointmentController extends Controller
     public function search()
     {
         $settings = WebsiteSetting::getForCurrentLab();
-        
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         return view('website.appointments.search', compact('settings', 'menuItems'));
@@ -499,12 +523,12 @@ class PublicAppointmentController extends Controller
         ]);
 
         $settings = WebsiteSetting::getForCurrentLab();
-        
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         // Find patient by phone number for current lab
@@ -512,7 +536,7 @@ class PublicAppointmentController extends Controller
             ->where('phone', $validated['phone'])
             ->first();
 
-        if (!$patient) {
+        if (! $patient) {
             return view('website.appointments.results', compact('settings', 'menuItems'))
                 ->with('error', 'No patient found with this phone number.');
         }
@@ -539,12 +563,12 @@ class PublicAppointmentController extends Controller
         }
 
         $settings = WebsiteSetting::getForCurrentLab();
-        
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         $appointment->load(['patient', 'package.tests', 'doctor']);
@@ -568,15 +592,15 @@ class PublicAppointmentController extends Controller
 
         $appointment->update([
             'status' => 'cancelled',
-            'notes' => ($appointment->notes ? $appointment->notes . "\n\n" : '') . 'Cancelled by patient on ' . now()->format('Y-m-d H:i:s'),
+            'notes' => ($appointment->notes ? $appointment->notes."\n\n" : '').'Cancelled by patient on '.now()->format('Y-m-d H:i:s'),
         ]);
 
         // Send WhatsApp notification
         try {
-            $whatsappService = app(\App\Services\WhatsAppService::class);
+            $whatsappService = app(WhatsAppService::class);
             $whatsappService->sendAppointmentCancelled($appointment);
         } catch (\Exception $e) {
-            \Log::error('WhatsApp notification failed: ' . $e->getMessage());
+            \Log::error('WhatsApp notification failed: '.$e->getMessage());
         }
 
         $settings = WebsiteSetting::getForCurrentLab();

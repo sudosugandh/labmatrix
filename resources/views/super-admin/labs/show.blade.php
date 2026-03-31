@@ -310,29 +310,34 @@
                 @method('PUT')
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="brand_name" class="block text-sm font-medium text-gray-700 mb-2">Brand Name</label>
-                        <input type="text" name="brand_name" id="brand_name" value="{{ old('brand_name', $settings->brand_name ?? $lab->name) }}"
+                        <label for="brand_name" class="block text-sm font-medium text-gray-700 mb-2">Lab / brand name</label>
+                        <input type="text" name="brand_name" id="brand_name" value="{{ old('brand_name', optional($settings)->brand_name ?? $lab->name) }}"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
                     </div>
                     <div>
-                        <label for="primary_color" class="block text-sm font-medium text-gray-700 mb-2">Primary Color</label>
-                        <input type="color" name="primary_color" id="primary_color" value="{{ old('primary_color', $settings->primary_color ?? '#3B82F6') }}"
+                        <label for="primary_color" class="block text-sm font-medium text-gray-700 mb-2">Primary color</label>
+                        <input type="color" name="primary_color" id="primary_color" value="{{ old('primary_color', optional($settings)->primary_color ?? '#3B82F6') }}"
+                            class="block w-full h-10 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label for="secondary_color" class="block text-sm font-medium text-gray-700 mb-2">Secondary color</label>
+                        <input type="color" name="secondary_color" id="secondary_color" value="{{ old('secondary_color', optional($settings)->secondary_color ?? '#8b5cf6') }}"
                             class="block w-full h-10 rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     </div>
                     <div>
                         <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                        <input type="text" name="phone" id="phone" value="{{ old('phone', $settings->phone ?? $lab->phone) }}"
+                        <input type="text" name="phone" id="phone" value="{{ old('phone', optional($settings)->phone ?? $lab->phone) }}"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
                     </div>
                     <div>
                         <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                        <input type="email" name="email" id="email" value="{{ old('email', $settings->email ?? $lab->email) }}"
+                        <input type="email" name="email" id="email" value="{{ old('email', optional($settings)->email ?? $lab->email) }}"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
                     </div>
                     <div class="md:col-span-2">
                         <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
                         <textarea name="address" id="address" rows="2"
-                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">{{ old('address', $settings->address ?? $lab->address) }}</textarea>
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">{{ old('address', optional($settings)->address ?? $lab->address) }}</textarea>
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">

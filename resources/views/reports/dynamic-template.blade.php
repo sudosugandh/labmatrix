@@ -6,7 +6,7 @@
     <title>Laboratory Test Report</title>
     <style>
         @page {
-            margin: 15mm;
+            margin: 10mm 12mm;
             size: A4;
         }
         
@@ -18,17 +18,17 @@
         
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 10pt;
+            font-size: 9pt;
             color: #000;
-            line-height: 1.4;
+            line-height: 1.32;
         }
         
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border-bottom: 2px solid #333;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
         }
         
         .header-left {
@@ -45,16 +45,16 @@
         }
         
         .lab-logo {
-            max-width: 120px;
-            max-height: 80px;
-            margin-bottom: 5px;
+            max-width: 110px;
+            max-height: 64px;
+            margin-bottom: 3px;
         }
         
         .lab-name {
-            font-size: 20pt;
+            font-size: 17pt;
             font-weight: bold;
-            margin-bottom: 5px;
-            letter-spacing: 0.5px;
+            margin-bottom: 3px;
+            letter-spacing: 0.3px;
             color: {{ $settings->primary_color ?? '#1e40af' }};
         }
         
@@ -72,11 +72,11 @@
         
         .report-title {
             text-align: center;
-            font-size: 16pt;
+            font-size: 13pt;
             font-weight: bold;
-            margin: 15px 0;
+            margin: 6px 0 8px;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
         
         .qr-section {
@@ -99,9 +99,9 @@
         .patient-info {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border: 1px solid #ddd;
-            padding: 10px;
+            padding: 6px 8px;
             background-color: #f9fafb;
         }
         
@@ -113,51 +113,57 @@
             display: table-cell;
             width: 30%;
             font-weight: bold;
-            padding: 5px;
+            padding: 3px 5px;
             border-right: 1px solid #ddd;
         }
         
         .info-value {
             display: table-cell;
-            padding: 5px 10px;
+            padding: 3px 8px;
         }
         
         .section {
-            margin-bottom: 20px;
-            page-break-inside: avoid;
+            margin-bottom: 10px;
+            page-break-inside: auto;
         }
         
         .section-title {
             background-color: {{ $settings->primary_color ?? '#1e40af' }};
             color: white;
-            padding: 10px 12px;
+            padding: 5px 10px;
             font-weight: bold;
-            font-size: 11pt;
-            margin-bottom: 5px;
-            border-radius: 4px;
+            font-size: 10pt;
+            margin-bottom: 3px;
+            border-radius: 3px;
         }
         
         .section-content {
-            padding: 10px;
+            padding: 6px 4px;
         }
         
         .results-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 6px;
         }
         
         .results-table th {
             background-color: #e5e7eb;
-            padding: 8px;
+            padding: 4px 6px;
             text-align: left;
             border: 1px solid #ddd;
             font-weight: bold;
+            font-size: 8pt;
         }
         
         .results-table td {
-            padding: 8px;
+            padding: 3px 6px;
             border: 1px solid #ddd;
+            font-size: 8.5pt;
+        }
+        
+        .results-table tbody tr {
+            page-break-inside: avoid;
         }
         
         .results-table tr:nth-child(even) {
@@ -183,39 +189,42 @@
         }
         
         .calculated-value {
-            font-size: 12pt;
+            font-size: 10pt;
             font-weight: bold;
             color: {{ $settings->primary_color ?? '#1e40af' }};
-            padding: 10px;
+            padding: 6px 8px;
             background-color: #f0f9ff;
             border-left: 4px solid {{ $settings->primary_color ?? '#1e40af' }};
-            margin: 10px 0;
+            margin: 6px 0;
         }
         
         .interpretation-box {
-            padding: 12px;
+            padding: 6px 8px;
             background-color: #fef3c7;
             border-left: 4px solid #f59e0b;
-            margin: 15px 0;
-            border-radius: 4px;
+            margin: 8px 0;
+            border-radius: 3px;
+            font-size: 8.5pt;
         }
         
         .text-content {
-            padding: 10px;
-            line-height: 1.6;
+            padding: 4px 2px;
+            line-height: 1.45;
+            font-size: 8.5pt;
         }
         
         .custom-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 10px 0;
+            margin: 4px 0;
         }
         
         .custom-table th,
         .custom-table td {
-            padding: 8px;
+            padding: 3px 6px;
             border: 1px solid #ddd;
             text-align: left;
+            font-size: 8.5pt;
         }
         
         .custom-table th {
@@ -224,20 +233,21 @@
         }
         
         .notes-section {
-            padding: 10px;
+            padding: 6px 8px;
             background-color: #f9fafb;
             border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 9pt;
+            border-radius: 3px;
+            font-size: 8pt;
             color: #666;
         }
         
         .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 12px;
+            padding-top: 8px;
             border-top: 2px solid #333;
             display: table;
             width: 100%;
+            font-size: 8pt;
         }
         
         .footer-left {
@@ -254,7 +264,7 @@
         }
         
         .doctor-signature {
-            margin-top: 20px;
+            margin-top: 8px;
         }
         
         .doctor-name {
@@ -554,3 +564,4 @@
     </div>
 </body>
 </html>
+

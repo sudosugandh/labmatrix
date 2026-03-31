@@ -126,6 +126,14 @@
             <p class="mt-2 text-xs text-gray-500" id="commission_hint">Enter percentage (e.g., 10 for 10%) or fixed amount (e.g., 100 for ₹100)</p>
         </x-form-section>
 
+        <x-form-section title="Doctor portal (website)" description="Doctors sign in at /doctor-portal on your lab site using their phone and this password.">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <x-form-input label="Portal password" name="portal_password" type="password" autocomplete="new-password" placeholder="Min. 8 characters" />
+                <x-form-input label="Confirm portal password" name="portal_password_confirmation" type="password" autocomplete="new-password" />
+            </div>
+            <p class="text-xs text-gray-500 mt-2">Leave blank to create the doctor without portal access until you set a password later.</p>
+        </x-form-section>
+
         <!-- Status -->
         <x-form-section title="Status" description="Control doctor's active status">
             <x-form-checkbox 

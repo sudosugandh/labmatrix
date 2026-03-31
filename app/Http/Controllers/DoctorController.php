@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Doctor;
-use App\Models\TestOrder;
 use App\Models\DoctorCommission;
-use Illuminate\Http\Request;
+use App\Models\TestOrder;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\View\View;
 
 class DoctorController extends Controller
 {
@@ -22,12 +22,12 @@ class DoctorController extends Controller
         // Search functionality
         if ($request->has('search') && $request->search) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('specialization', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('clinic_name', 'like', "%{$search}%");
+                    ->orWhere('specialization', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('clinic_name', 'like', "%{$search}%");
             });
         }
 
@@ -37,14 +37,14 @@ class DoctorController extends Controller
         }
 
         $doctors = $query->latest()->paginate(15)->withQueryString();
-        
+
         // Calculate pending commissions for each doctor
         foreach ($doctors as $doctor) {
             $doctor->pending_commission = DoctorCommission::where('doctor_id', $doctor->id)
                 ->where('status', 'pending')
                 ->sum('commission_amount');
         }
-        
+
         // Statistics
         $labId = currentLabId();
         $stats = [
@@ -82,12 +82,19 @@ class DoctorController extends Controller
             'is_active' => 'boolean',
             'commission_type' => 'required|in:percentage,fixed',
             'commission_rate' => 'required|numeric|min:0',
+            'portal_password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        Doctor::create(array_merge($validated, [
+        $data = array_merge($validated, [
             'lab_id' => currentLabId(),
             'is_active' => $request->has('is_active'),
-        ]));
+        ]);
+        unset($data['portal_password'], $data['portal_password_confirmation']);
+        if ($request->filled('portal_password')) {
+            $data['password'] = $request->portal_password;
+        }
+
+        Doctor::create($data);
 
         return redirect()->route('doctors.index')
             ->with('success', 'Doctor added successfully.');
@@ -104,7 +111,7 @@ class DoctorController extends Controller
 
         // Load related data
         $doctor->loadCount('testOrders');
-        
+
         // Get recent referrals
         $recentOrders = TestOrder::where('doctor_id', $doctor->id)
             ->where('lab_id', currentLabId())
@@ -174,11 +181,18 @@ class DoctorController extends Controller
             'is_active' => 'boolean',
             'commission_type' => 'required|in:percentage,fixed',
             'commission_rate' => 'required|numeric|min:0',
+            'portal_password' => 'nullable|string|min:8|confirmed',
         ]);
 
-        $doctor->update(array_merge($validated, [
+        $data = array_merge($validated, [
             'is_active' => $request->has('is_active'),
-        ]));
+        ]);
+        unset($data['portal_password'], $data['portal_password_confirmation']);
+        if ($request->filled('portal_password')) {
+            $data['password'] = $request->portal_password;
+        }
+
+        $doctor->update($data);
 
         return redirect()->route('doctors.show', $doctor)
             ->with('success', 'Doctor updated successfully.');
@@ -258,7 +272,7 @@ class DoctorController extends Controller
             $commission->update([
                 'status' => 'paid',
                 'payment_date' => $validated['payment_date'],
-                'notes' => ($commission->notes ? $commission->notes . "\n\n" : '') . ($validated['notes'] ?? ''),
+                'notes' => ($commission->notes ? $commission->notes."\n\n" : '').($validated['notes'] ?? ''),
                 'paid_by' => auth()->id(),
             ]);
 
@@ -272,7 +286,8 @@ class DoctorController extends Controller
             return back()->with('success', 'Commission marked as paid successfully.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['error' => 'Failed to mark commission as paid: ' . $e->getMessage()]);
+
+            return back()->withErrors(['error' => 'Failed to mark commission as paid: '.$e->getMessage()]);
         }
     }
 }

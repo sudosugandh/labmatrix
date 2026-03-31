@@ -43,6 +43,9 @@
     <div class="bg-white rounded-xl shadow-lg p-6">
         <form method="POST" action="{{ route('orders.store') }}">
             @csrf
+            @if(old('appointment_id', $appointment->id ?? null))
+                <input type="hidden" name="appointment_id" value="{{ old('appointment_id', $appointment->id ?? '') }}">
+            @endif
 
             <div class="space-y-6">
                 <!-- Patient Selection -->
@@ -52,7 +55,7 @@
                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('patient_id') border-red-500 @enderror">
                         <option value="">Select Patient</option>
                         @foreach($patients as $patient)
-                            <option value="{{ $patient->id }}" {{ old('patient_id') == $patient->id ? 'selected' : '' }}>
+                            <option value="{{ $patient->id }}" {{ (string) old('patient_id', $defaultPatientId ?? '') === (string) $patient->id ? 'selected' : '' }}>
                                 {{ $patient->name }} - {{ $patient->phone }}
                             </option>
                         @endforeach
@@ -67,12 +70,12 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">Order Type *</label>
                     <div class="flex space-x-4">
                         <label class="flex items-center">
-                            <input type="radio" name="order_type" value="test" {{ old('order_type', 'test') == 'test' ? 'checked' : '' }} 
+                            <input type="radio" name="order_type" value="test" {{ old('order_type', $defaultOrderType ?? 'test') == 'test' ? 'checked' : '' }} 
                                 class="text-indigo-600 focus:ring-indigo-500" onchange="toggleOrderType()">
                             <span class="ml-2 text-sm text-gray-700">Single Test</span>
                         </label>
                         <label class="flex items-center">
-                            <input type="radio" name="order_type" value="package" {{ old('order_type') == 'package' ? 'checked' : '' }}
+                            <input type="radio" name="order_type" value="package" {{ old('order_type', $defaultOrderType ?? 'test') == 'package' ? 'checked' : '' }}
                                 class="text-indigo-600 focus:ring-indigo-500" onchange="toggleOrderType()">
                             <span class="ml-2 text-sm text-gray-700">Test Package</span>
                         </label>
@@ -86,7 +89,7 @@
                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('test_id') border-red-500 @enderror">
                         <option value="">Select Test</option>
                         @foreach($tests as $test)
-                            <option value="{{ $test->id }}" {{ old('test_id') == $test->id ? 'selected' : '' }}>
+                            <option value="{{ $test->id }}" {{ (string) old('test_id', $defaultTestId ?? '') === (string) $test->id ? 'selected' : '' }}>
                                 {{ $test->name }} - ₹{{ number_format($test->price, 2) }}
                             </option>
                         @endforeach
@@ -103,7 +106,7 @@
                         class="block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-3 @error('package_id') border-red-500 @enderror">
                         <option value="">Select Package</option>
                         @foreach($packages as $package)
-                            <option value="{{ $package->id }}" data-tests="{{ $package->tests->count() }}" data-price="{{ $package->final_price }}" {{ old('package_id') == $package->id ? 'selected' : '' }}>
+                            <option value="{{ $package->id }}" data-tests="{{ $package->tests->count() }}" data-price="{{ $package->final_price }}" {{ (string) old('package_id', $defaultPackageId ?? '') === (string) $package->id ? 'selected' : '' }}>
                                 {{ $package->name }} - ₹{{ number_format($package->final_price, 2) }} ({{ $package->tests->count() }} tests)
                             </option>
                         @endforeach
@@ -213,6 +216,11 @@
         // Initialize on page load
         document.addEventListener('DOMContentLoaded', function() {
             toggleOrderType();
+
+            const pkgSelect = document.getElementById('package_id');
+            if (pkgSelect && pkgSelect.value) {
+                pkgSelect.dispatchEvent(new Event('change'));
+            }
             
             // Ensure package_id is disabled initially if test is selected
             const orderType = document.querySelector('input[name="order_type"]:checked');

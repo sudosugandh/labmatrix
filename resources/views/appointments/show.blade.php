@@ -221,7 +221,7 @@
                     </form>
 
                     <div class="pt-4 border-t space-y-2">
-                        <a href="{{ route('orders.create', ['patient_id' => $appointment->patient_id]) }}" class="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
+                        <a href="{{ route('orders.create', ['patient_id' => $appointment->patient_id, 'appointment_id' => $appointment->id]) }}" class="block w-full text-center bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200">
                             Create Test Order
                         </a>
                         <form method="POST" action="{{ route('appointments.destroy', $appointment) }}" onsubmit="return confirm('Are you sure you want to delete this appointment?');">

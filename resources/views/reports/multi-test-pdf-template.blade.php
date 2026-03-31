@@ -6,7 +6,7 @@
     <title>Multi-Test Laboratory Report</title>
     <style>
         @page {
-            margin: 15mm;
+            margin: 10mm 12mm;
             size: A4;
         }
         
@@ -18,17 +18,17 @@
         
         body {
             font-family: 'DejaVu Sans', Arial, sans-serif;
-            font-size: 10pt;
+            font-size: 9pt;
             color: #000;
-            line-height: 1.4;
+            line-height: 1.3;
         }
         
         .header {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border-bottom: 2px solid #333;
-            padding-bottom: 10px;
+            padding-bottom: 6px;
         }
         
         .header-left {
@@ -45,9 +45,9 @@
         }
         
         .lab-name {
-            font-size: 20pt;
+            font-size: 17pt;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             letter-spacing: 0.5px;
         }
         
@@ -58,22 +58,22 @@
         
         .report-title {
             text-align: center;
-            font-size: 16pt;
+            font-size: 13pt;
             font-weight: bold;
-            margin: 15px 0;
+            margin: 8px 0;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
             border-top: 1px solid #333;
             border-bottom: 1px solid #333;
-            padding: 10px 0;
+            padding: 6px 0;
         }
         
         .patient-info {
             display: table;
             width: 100%;
-            margin-bottom: 15px;
+            margin-bottom: 8px;
             border: 1px solid #d1d9e6;
-            padding: 12px 14px;
+            padding: 8px 10px;
             background-color: #e8ecf1;
         }
         
@@ -95,39 +95,39 @@
         }
         
         .test-section {
-            margin-bottom: 25px;
-            page-break-inside: avoid;
+            margin-bottom: 12px;
+            page-break-inside: auto;
         }
         
         .test-section-title {
             color: white;
-            padding: 10px 12px;
+            padding: 6px 10px;
             font-weight: bold;
-            font-size: 11pt;
-            margin-bottom: 5px;
-            border-radius: 4px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            font-size: 10pt;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
         }
         
         .results-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 15px;
+            margin-bottom: 6px;
         }
         
         .results-table th {
             background-color: #e5e7eb;
-            padding: 8px;
+            padding: 4px 6px;
             text-align: left;
             font-weight: bold;
             border: 1px solid #ddd;
-            font-size: 9pt;
+            font-size: 8pt;
         }
         
         .results-table td {
-            padding: 6px 8px;
+            padding: 3px 6px;
             border: 1px solid #ddd;
-            font-size: 9pt;
+            font-size: 8.5pt;
         }
         
         .results-table tr:nth-child(even) {
@@ -150,18 +150,18 @@
         }
         
         .interpretation-box {
-            margin-top: 10px;
-            padding: 10px;
+            margin-top: 6px;
+            padding: 6px 8px;
             background-color: #dbeafe;
             border-left: 4px solid #3b82f6;
-            font-size: 9pt;
+            font-size: 8pt;
         }
         
         .signatures {
             display: table;
             width: 100%;
-            margin-top: 30px;
-            margin-bottom: 20px;
+            margin-top: 12px;
+            margin-bottom: 8px;
         }
         
         .signature-block {
@@ -174,8 +174,8 @@
         
         .signature-line {
             border-top: 1px solid #333;
-            margin-top: 50px;
-            padding-top: 5px;
+            margin-top: 28px;
+            padding-top: 4px;
         }
         
         .signature-name {
@@ -189,30 +189,16 @@
         }
         
         .footer {
-            margin-top: 30px;
-            padding-top: 15px;
+            margin-top: 10px;
+            padding-top: 8px;
             border-top: 2px solid #333;
-            font-size: 8pt;
+            font-size: 7.5pt;
             text-align: center;
             color: #666;
-        }
-        
-        .watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) rotate(-45deg);
-            font-size: 72pt;
-            color: rgba(107, 33, 168, 0.06);
-            z-index: -1;
-            font-weight: bold;
         }
     </style>
 </head>
 <body>
-    <!-- Watermark -->
-    <div class="watermark">{{ isset($settings) && $settings->brand_name ? $settings->brand_name : ($lab->name ?? 'HealthMatrix') }}</div>
-    
     <!-- Header -->
     <div class="header">
         <div class="header-left">

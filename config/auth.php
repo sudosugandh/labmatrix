@@ -1,5 +1,7 @@
 <?php
 
+use App\Models\CorporateAccount;
+use App\Models\Doctor;
 use App\Models\User;
 
 return [
@@ -42,6 +44,14 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'doctor' => [
+            'driver' => 'session',
+            'provider' => 'doctors',
+        ],
+        'corporate' => [
+            'driver' => 'session',
+            'provider' => 'corporate_accounts',
+        ],
     ],
 
     /*
@@ -65,6 +75,16 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', User::class),
+        ],
+
+        'doctors' => [
+            'driver' => 'eloquent',
+            'model' => Doctor::class,
+        ],
+
+        'corporate_accounts' => [
+            'driver' => 'eloquent',
+            'model' => CorporateAccount::class,
         ],
 
         // 'users' => [

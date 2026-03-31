@@ -9,8 +9,11 @@
             'brand_name' => currentLab()?->name ?? 'HealthMatrix',
             'hero_title' => 'Welcome to ' . (currentLab()?->name ?? 'HealthMatrix'),
             'hero_subtitle' => 'Your trusted diagnostic center',
+            'theme_preset' => 'violet',
         ]);
     }
+    $theme = \App\Support\WebsiteTheme::preset('violet');
+    $secondaryResolved = $settings->secondary_color ?: $theme['secondary_default'];
 @endphp
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -32,15 +35,18 @@
     @endif
 
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700|sora:600,700&display=swap" rel="stylesheet" />
+    <link href="{{ $theme['fonts_href'] }}" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         :root {
             --primary-color: {{ $settings->primary_color ?? '#6366f1' }};
             --primary-hover: {{ $settings->primary_color ?? '#4f46e5' }};
-            --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
-            --font-body: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+            --secondary-color: {{ $secondaryResolved }};
+            --page-bg-start: {{ $theme['page_bg_start'] }};
+            --page-bg-end: {{ $theme['page_bg_end'] }};
+            --font-display: {{ $theme['font_display'] }};
+            --font-body: {{ $theme['font_body'] }};
         }
         html { scroll-behavior: smooth; }
         body { font-family: var(--font-body); }
@@ -198,7 +204,7 @@
         .page-loader {
             position: fixed;
             inset: 0;
-            background: linear-gradient(180deg, #fafbff 0%, #f0f4ff 100%);
+            background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 100%);
             z-index: 99999;
             display: flex;
             align-items: center;
@@ -214,9 +220,9 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            border: 4px solid #e8ecf7;
+            border: 4px solid color-mix(in srgb, var(--primary-color) 12%, var(--page-bg-end));
             border-top-color: var(--primary-color);
-            border-right-color: #8b5cf6;
+            border-right-color: var(--secondary-color);
             animation: loader-spin 0.9s linear infinite;
         }
         .page-loader__icons {
@@ -255,7 +261,7 @@
     @endphp
     @stack('styles')
 </head>
-<body class="font-sans antialiased" x-data="{ navOpen: false }">
+<body class="font-sans antialiased min-h-screen" style="background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 55%, #ffffff 100%);" x-data="{ navOpen: false }">
     <!-- Page load loader (lab-themed) -->
     <div id="page-loader" class="page-loader" aria-hidden="true">
         <div class="relative flex flex-col items-center justify-center">
@@ -265,13 +271,13 @@
                     <div class="page-loader__icon page-loader__icon--1" style="color: var(--primary-color);" title="Test tube">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M7 2v2h1v14c0 2.21 1.79 4 4 4s4-1.79 4-4V4h1V2H7zm4 18c-1.1 0-2-.9-2-2V4h4v14c0 1.1-.9 2-2 2z"/></svg>
                     </div>
-                    <div class="page-loader__icon page-loader__icon--2" style="color: #8b5cf6;" title="Microscope">
+                    <div class="page-loader__icon page-loader__icon--2" style="color: var(--secondary-color);" title="Microscope">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M19 8h-1V6h-2v2h-2V6h-2v2H5c-1.1 0-2 .9-2 2v1h2v7c0 1.1.9 2 2 2h2v1h2v-1h2c1.1 0 2-.9 2-2v-7h2v-1c0-1.1-.9-2-2-2zm-4 9H9v-2h6v2z"/></svg>
                     </div>
                     <div class="page-loader__icon page-loader__icon--3" style="color: var(--primary-color);" title="Beaker">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M7 2v2h1v12.27c-1.29.52-2.22 1.76-2.22 3.23 0 1.94 1.58 3.5 3.5 3.5s3.5-1.56 3.5-3.5c0-1.47-.93-2.71-2.22-3.23V4h1V2H7zm2 2h2v10.82c.55.22 1 .58 1.27 1.04.27-.46.72-.82 1.27-1.04V4h2V2H9v2z"/></svg>
                     </div>
-                    <div class="page-loader__icon page-loader__icon--4" style="color: #6366f1;" title="Lab">
+                    <div class="page-loader__icon page-loader__icon--4" style="color: color-mix(in srgb, var(--primary-color) 70%, var(--secondary-color) 30%);" title="Lab">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M12 2L2 7v2h2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9h2V7L12 2zm0 2.18l6 3.32v1.5H6v-1.5l6-3.32zM18 19H6V9h12v10z"/></svg>
                     </div>
                 </div>

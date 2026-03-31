@@ -165,7 +165,7 @@
         <div class="relative top-20 mx-auto p-6 border w-full max-w-2xl shadow-lg rounded-lg bg-white">
             <div class="mt-3">
                 <h3 class="text-lg font-semibold text-gray-900 mb-4">Add Section</h3>
-                <form method="POST" action="{{ route('report-templates.sections.store', $reportTemplate)" id="addSectionForm">
+                <form method="POST" action="{{ route('report-templates.sections.store', $reportTemplate) }}" id="addSectionForm">
                     @csrf
                     <div class="space-y-4">
                         <div>

@@ -17,7 +17,10 @@ class WebsiteSettingController extends Controller
     {
         $settings = WebsiteSetting::getForCurrentLab();
         $lab = Lab::find(currentLabId());
-        $activeTab = $request->get('tab', 'general');
+        $activeTab = $request->get('tab', 'branding');
+        if ($activeTab === 'contact') {
+            return redirect()->route('admin.settings.index', ['tab' => 'branding']);
+        }
 
         $mainMenu = null;
         $cmsPages = collect();
@@ -42,10 +45,14 @@ class WebsiteSettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $settings = WebsiteSetting::getForCurrentLab();
-        $tab = $request->get('tab', 'general');
+        $tab = $request->get('tab', 'branding');
         
         $rules = $this->getValidationRules($tab);
         $validated = $request->validate($rules);
+
+        if ($tab === 'branding' && array_key_exists('secondary_color', $validated) && ($validated['secondary_color'] === '' || $validated['secondary_color'] === null)) {
+            $validated['secondary_color'] = null;
+        }
 
         // Handle file uploads
         $this->handleFileUploads($request, $settings, $validated);
@@ -105,6 +112,10 @@ class WebsiteSettingController extends Controller
 
         $settings->update($validated);
 
+        if ($tab === 'branding' && ! empty($validated['brand_name'] ?? null) && currentLabId()) {
+            Lab::where('id', currentLabId())->update(['name' => $validated['brand_name']]);
+        }
+
         return redirect()->route('admin.settings.index', ['tab' => $tab])
             ->with('success', 'Settings updated successfully.');
     }
@@ -116,10 +127,7 @@ class WebsiteSettingController extends Controller
         switch ($tab) {
             case 'general':
                 $rules = [
-                    'brand_name' => 'nullable|string|max:255',
                     'domain' => 'nullable|string|max:255',
-                    'logo' => 'nullable|image|max:2048',
-                    'favicon' => 'nullable|image|max:512',
                     'banner_images.*' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,video/mp4,video/quicktime,video/x-msvideo,video/webm|max:51200',
                     'description' => 'nullable|string|max:1000',
                 ];
@@ -127,16 +135,11 @@ class WebsiteSettingController extends Controller
 
             case 'branding':
                 $rules = [
+                    'brand_name' => 'nullable|string|max:255',
+                    'logo' => 'nullable|image|max:2048',
+                    'favicon' => 'nullable|image|max:512',
                     'primary_color' => 'nullable|string|max:7',
-                    'hero_title' => 'nullable|string|max:255',
-                    'hero_subtitle' => 'nullable|string',
-                    'hero_image' => 'nullable|image|max:5120',
-                    'footer_text' => 'nullable|string',
-                ];
-                break;
-
-            case 'contact':
-                $rules = [
+                    'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                     'phone' => 'nullable|string|max:20',
                     'email' => 'nullable|email|max:255',
                     'contact_phone' => 'nullable|string|max:20',
@@ -198,6 +201,10 @@ class WebsiteSettingController extends Controller
 
             case 'cms':
                 $rules = [
+                    'hero_title' => 'nullable|string|max:255',
+                    'hero_subtitle' => 'nullable|string',
+                    'hero_image' => 'nullable|image|max:5120',
+                    'footer_text' => 'nullable|string',
                     'header_content' => 'nullable|string',
                     'footer_content' => 'nullable|string',
                     'content_after_banner' => 'nullable|string',

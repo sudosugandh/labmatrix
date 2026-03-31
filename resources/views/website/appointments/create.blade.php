@@ -52,6 +52,22 @@
             </div>
         @endif
 
+        @if(!empty($referralDoctor ?? null))
+            <div class="mb-8 flex items-start gap-3 p-5 rounded-2xl bg-violet-50 border border-violet-200/80 text-violet-950 shadow-sm" role="status">
+                <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-violet-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                </div>
+                <div>
+                    @php
+                        $refName = trim($referralDoctor->name);
+                        $refByLine = preg_match('/^dr\.?\s/i', $refName) ? $refName : 'Dr. '.$refName;
+                    @endphp
+                    <p class="font-semibold text-violet-900">Referred by {{ $refByLine }}</p>
+                    <p class="mt-1 text-sm text-violet-800/90">Your visit will be linked to this doctor for reporting and commission. You do not need to enter referring doctor details below.</p>
+                </div>
+            </div>
+        @endif
+
         @if(!empty($payAtBookingSetupHint ?? ''))
             <div class="mb-8 flex items-start gap-3 p-5 rounded-2xl bg-amber-50 border border-amber-200/80 text-amber-950 shadow-sm" role="alert">
                 <div class="flex-shrink-0 w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center">
@@ -84,6 +100,9 @@
             @csrf
 
             <input type="hidden" name="booking_type" value="{{ $bookingType ?? 'patient' }}">
+            @if(request()->filled('ref'))
+                <input type="hidden" name="ref" value="{{ old('ref', request('ref')) }}">
+            @endif
 
             @if(isset($bookingType) && $bookingType === 'doctor')
             <!-- Doctor Information -->
@@ -292,7 +311,32 @@
             </div>
 
             @if(!isset($bookingType) || $bookingType === 'patient')
-            <!-- Referring Doctor Information (Optional for Patients) -->
+            @if(!empty($referralDoctor ?? null))
+            <!-- Referring doctor set via ?ref= link: show read-only details, no manual fields -->
+            <div class="relative bg-white rounded-2xl p-6 sm:p-8 shadow-xl shadow-slate-200/40 border border-violet-100 overflow-hidden">
+                <div class="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-violet-50/90 to-transparent rounded-bl-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+                <h2 class="font-display text-lg font-semibold text-slate-900 mb-1 flex items-center gap-2">
+                    <svg class="w-6 h-6 text-violet-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Referring doctor
+                </h2>
+                <p class="text-sm text-slate-600 mb-5">Pulled from your referral link — already linked to your booking.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 text-sm">
+                    <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Doctor</p>
+                        <p class="font-semibold text-slate-900">{{ $referralDoctor->name }}</p>
+                    </div>
+                    @if(!empty($referralDoctor->phone))
+                    <div class="rounded-xl border border-slate-200/80 bg-slate-50/80 px-4 py-3">
+                        <p class="text-xs font-medium text-slate-500 uppercase tracking-wide mb-1">Phone</p>
+                        <p class="font-semibold text-slate-900 tabular-nums">{{ $referralDoctor->phone }}</p>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @else
+            <!-- Referring Doctor Information (Optional for Patients) — only when not using a referral link -->
             <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden">
                 <div class="absolute top-0 right-0 w-48 h-48 bg-gradient-to-bl from-blue-50/80 to-transparent rounded-bl-full -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <h2 class="font-display text-lg font-semibold text-slate-900 mb-4 flex items-center">
@@ -325,6 +369,7 @@
                     </div>
                 </div>
             </div>
+            @endif
 
             <!-- Prescription Upload (Optional for Patients) -->
             <div class="relative bg-white rounded-2xl p-8 shadow-xl shadow-slate-200/40 border border-slate-200/60 overflow-hidden" style="background: linear-gradient(135deg, white 0%, color-mix(in srgb, var(--primary-color) 5%, white) 100%);">
