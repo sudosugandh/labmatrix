@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Testimonial;
-use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -13,6 +13,7 @@ class TestimonialController extends Controller
     public function index(): View
     {
         $testimonials = Testimonial::forCurrentLab()->orderBy('sort_order')->orderBy('id')->paginate(15);
+
         return view('testimonials.index', compact('testimonials'));
     }
 
@@ -25,6 +26,7 @@ class TestimonialController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'city' => 'nullable|string|max:120',
             'quote' => 'required|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'rating' => 'nullable|integer|min:1|max:5',
@@ -36,6 +38,7 @@ class TestimonialController extends Controller
             $validated['photo'] = $request->file('photo')->store('testimonials', 'public');
         }
         Testimonial::create($validated);
+
         return redirect()->route('testimonials.index')->with('success', 'Testimonial added.');
     }
 
@@ -44,6 +47,7 @@ class TestimonialController extends Controller
         if ($testimonial->lab_id !== currentLabId()) {
             abort(404);
         }
+
         return view('testimonials.edit', compact('testimonial'));
     }
 
@@ -54,6 +58,7 @@ class TestimonialController extends Controller
         }
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'city' => 'nullable|string|max:120',
             'quote' => 'required|string',
             'photo' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'rating' => 'nullable|integer|min:1|max:5',
@@ -68,6 +73,7 @@ class TestimonialController extends Controller
             $validated['photo'] = $request->file('photo')->store('testimonials', 'public');
         }
         $testimonial->update($validated);
+
         return redirect()->route('testimonials.index')->with('success', 'Testimonial updated.');
     }
 
@@ -80,6 +86,7 @@ class TestimonialController extends Controller
             Storage::disk('public')->delete($testimonial->photo);
         }
         $testimonial->delete();
+
         return redirect()->route('testimonials.index')->with('success', 'Testimonial removed.');
     }
 }

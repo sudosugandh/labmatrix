@@ -29,6 +29,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromoController;
 use App\Http\Controllers\PublicAppointmentController;
 use App\Http\Controllers\PublicBillPaymentController;
+use App\Http\Controllers\PublicContactController;
 use App\Http\Controllers\PublicPackageController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\ReportBuilderController;
@@ -86,12 +87,20 @@ Route::get('/my-appointments/{appointment}', [PublicAppointmentController::class
 Route::get('/my-appointments/{appointment}/print', [PublicAppointmentController::class, 'print'])
     ->where('appointment', '[0-9]+')
     ->name('public.appointments.print');
+Route::get('/my-appointments/{appointment}/confirmation.pdf', [PublicAppointmentController::class, 'downloadConfirmation'])
+    ->where('appointment', '[0-9]+')
+    ->name('public.appointments.confirmation.download');
 Route::delete('/my-appointments/{appointment}', [PublicAppointmentController::class, 'cancel'])
     ->where('appointment', '[0-9]+')
     ->name('public.appointments.cancel');
 
 // Home visit / home collection lead popup
 Route::post('/home-visit-request', [HomeVisitRequestController::class, 'store'])->name('public.home-visit-request.store');
+
+// Public contact form (before dynamic /{slug})
+Route::post('/contact', [PublicContactController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('public.contact.store');
 
 // Public payment link (pay bill by token - no auth)
 Route::get('/pay-bill/{token}', [PublicBillPaymentController::class, 'show'])->name('public.bill-pay.show');

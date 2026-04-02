@@ -10,7 +10,7 @@
                 </svg>
             </div>
             <h1 class="text-2xl font-bold text-gray-900 font-display">Doctor portal</h1>
-            <p class="text-gray-600 mt-2 text-sm">Sign in with the phone number registered for your lab account.</p>
+            <p class="text-gray-600 mt-2 text-sm">Sign in with the phone or email saved for this doctor on your lab site (same lab URL you use for bookings).</p>
         </div>
 
         @if ($errors->any())
@@ -22,8 +22,8 @@
         <form method="POST" action="{{ route('doctor.portal.login') }}" class="space-y-5">
             @csrf
             <div>
-                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                <input type="tel" name="phone" id="phone" value="{{ old('phone') }}" required autocomplete="tel"
+                <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone or email</label>
+                <input type="text" name="phone" id="phone" value="{{ old('phone') }}" required autocomplete="username"
                     class="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500">
             </div>
             <div>

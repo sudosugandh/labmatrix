@@ -2,13 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Faq;
 use App\Models\Lab;
 use App\Models\Patient;
 use App\Models\Test;
-use App\Models\TestOrder;
 use App\Models\Testimonial;
-use App\Models\Faq;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\TestOrder;
 use Illuminate\Database\Seeder;
 
 class LabDataSeeder extends Seeder
@@ -20,9 +19,10 @@ class LabDataSeeder extends Seeder
     {
         // Get the first lab (or create one if none exists)
         $lab = Lab::first();
-        
-        if (!$lab) {
+
+        if (! $lab) {
             $this->command->error('No lab found. Please create a lab first.');
+
             return;
         }
 
@@ -73,7 +73,7 @@ class LabDataSeeder extends Seeder
                 array_merge($testData, ['lab_id' => $labId])
             );
         });
-        $this->command->info('Created/updated ' . $tests->count() . ' tests');
+        $this->command->info('Created/updated '.$tests->count().' tests');
 
         // Create 10 test orders
         $statuses = ['pending', 'sample_collected', 'processing', 'completed'];
@@ -93,9 +93,9 @@ class LabDataSeeder extends Seeder
 
         // Sample testimonials for website homepage
         $testimonialData = [
-            ['name' => 'Priya S.', 'quote' => 'Very professional staff and quick reports. The home collection was convenient and the phlebotomist was gentle.', 'rating' => 5, 'is_featured' => true, 'sort_order' => 0],
-            ['name' => 'Rajesh K.', 'quote' => 'Accurate results and transparent pricing. I have been coming here for annual checkups for three years.', 'rating' => 5, 'is_featured' => true, 'sort_order' => 1],
-            ['name' => 'Anita M.', 'quote' => 'Clean facility and minimal wait time. The doctor explained my reports clearly. Highly recommend.', 'rating' => 4, 'is_featured' => false, 'sort_order' => 2],
+            ['name' => 'Priya S.', 'city' => 'New Delhi', 'quote' => 'Very professional staff and quick reports. The home collection was convenient and the phlebotomist was gentle.', 'rating' => 5, 'is_featured' => true, 'sort_order' => 0],
+            ['name' => 'Rajesh K.', 'city' => 'Gurgaon', 'quote' => 'Accurate results and transparent pricing. I have been coming here for annual checkups for three years.', 'rating' => 5, 'is_featured' => true, 'sort_order' => 1],
+            ['name' => 'Anita M.', 'city' => 'Noida', 'quote' => 'Clean facility and minimal wait time. The doctor explained my reports clearly. Highly recommend.', 'rating' => 4, 'is_featured' => false, 'sort_order' => 2],
         ];
         foreach ($testimonialData as $i => $data) {
             Testimonial::updateOrCreate(
@@ -103,7 +103,7 @@ class LabDataSeeder extends Seeder
                 array_merge($data, ['lab_id' => $labId])
             );
         }
-        $this->command->info('Created/updated ' . count($testimonialData) . ' testimonials');
+        $this->command->info('Created/updated '.count($testimonialData).' testimonials');
 
         // Sample FAQs for website homepage
         $faqData = [
@@ -117,7 +117,7 @@ class LabDataSeeder extends Seeder
                 array_merge($data, ['lab_id' => $labId])
             );
         }
-        $this->command->info('Created/updated ' . count($faqData) . ' FAQs');
+        $this->command->info('Created/updated '.count($faqData).' FAQs');
 
         $this->command->info('Seeding completed successfully!');
     }

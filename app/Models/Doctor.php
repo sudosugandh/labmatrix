@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Support\PhoneDigits;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -62,6 +64,19 @@ class Doctor extends Authenticatable
         } while (static::where('lab_id', $labId)->where('referral_code', $code)->exists());
 
         return $code;
+    }
+
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            set: function (?string $value) {
+                if ($value === null || trim($value) === '') {
+                    return null;
+                }
+
+                return PhoneDigits::normalize($value);
+            },
+        );
     }
 
     public function lab(): BelongsTo

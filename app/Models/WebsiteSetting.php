@@ -26,6 +26,14 @@ class WebsiteSetting extends Model
         'hero_image',
         'banner_images',
         'footer_text',
+        'footer_tagline',
+        'pre_footer_cta_enabled',
+        'pre_footer_heading',
+        'pre_footer_subtitle',
+        'footer_show_trust_badges',
+        'footer_trust_nabl',
+        'footer_trust_iso',
+        'footer_trust_patients',
         'header_content',
         'footer_content',
         'content_after_banner',
@@ -94,6 +102,32 @@ class WebsiteSetting extends Model
         'ip_whitelist',
         'password_policy_enabled',
         'password_min_length',
+        'trust_strip_enabled',
+        'trust_strip_items',
+        'hero_cta_primary_label',
+        'hero_cta_primary_url',
+        'hero_cta_secondary_label',
+        'hero_cta_secondary_url',
+        'hero_cta_tertiary_label',
+        'hero_cta_tertiary_url',
+        'promos_today_strip_enabled',
+        'promos_today_heading',
+        'promos_today_subtitle',
+        'promos_subtitle',
+        'spotlight_enabled',
+        'spotlight_name',
+        'spotlight_credentials',
+        'spotlight_tagline',
+        'spotlight_image',
+        'spotlight_experience',
+        'about_intro',
+        'about_why_cards',
+        'about_stat_tests',
+        'about_stat_patients',
+        'about_stat_years',
+        'about_working_hours',
+        'contact_working_hours',
+        'about_team_trust_line',
     ];
 
     protected $casts = [
@@ -117,6 +151,16 @@ class WebsiteSetting extends Model
         'two_factor_enabled' => 'boolean',
         'ip_whitelist_enabled' => 'boolean',
         'password_policy_enabled' => 'boolean',
+        'trust_strip_enabled' => 'boolean',
+        'trust_strip_items' => 'array',
+        'promos_today_strip_enabled' => 'boolean',
+        'spotlight_enabled' => 'boolean',
+        'about_why_cards' => 'array',
+        'pre_footer_cta_enabled' => 'boolean',
+        'footer_show_trust_badges' => 'boolean',
+        'footer_trust_nabl' => 'boolean',
+        'footer_trust_iso' => 'boolean',
+        'footer_trust_patients' => 'boolean',
     ];
 
     public function lab(): BelongsTo
@@ -130,20 +174,20 @@ class WebsiteSetting extends Model
     public static function getForCurrentLab()
     {
         $labId = currentLabId();
-        if (!$labId) {
+        if (! $labId) {
             return null;
         }
 
         $lab = currentLab();
-        
+
         return static::firstOrCreate(
             ['lab_id' => $labId],
             [
                 'brand_name' => $lab?->name ?? 'HealthMatrix',
                 'primary_color' => '#3B82F6',
                 'theme_preset' => 'violet',
-                'hero_title' => 'Welcome to ' . ($lab?->name ?? 'HealthMatrix'),
-                'hero_subtitle' => 'Your trusted diagnostic center',
+                'hero_title' => 'Accurate Lab Tests. Fast Reports. Trusted Care.',
+                'hero_subtitle' => 'Book your test online and get reliable reports quickly.',
                 'online_booking_enabled' => true,
                 'online_reports_enabled' => true,
                 'notifications_enabled' => true,
@@ -207,5 +251,181 @@ class WebsiteSetting extends Model
         }
 
         return 'Add both API Key and API Secret under Settings → Payments so the payment page can charge cards.';
+    }
+
+    /**
+     * Resolve a vendor-entered URL for the public site (absolute, relative path, tel, mailto, whatsapp).
+     */
+    public static function resolvePublicUrl(?string $url): string
+    {
+        $u = trim((string) $url);
+        if ($u === '') {
+            return '';
+        }
+        if (preg_match('#^(https?://|tel:|mailto:|whatsapp:)#i', $u)) {
+            return $u;
+        }
+
+        return url($u);
+    }
+
+    /**
+     * Build https://wa.me/{digits} from a display phone number (contact_phone / phone).
+     * 10-digit numbers are treated as India (+91). Other lengths use digits as stored after stripping formatting.
+     */
+    public static function whatsappUrlFromPhone(?string $phone): ?string
+    {
+        $raw = trim((string) $phone);
+        if ($raw === '') {
+            return null;
+        }
+        $digits = preg_replace('/\D+/', '', $raw);
+        if (str_starts_with($digits, '00')) {
+            $digits = substr($digits, 2);
+        }
+        if ($digits === '') {
+            return null;
+        }
+        if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            $digits = substr($digits, 1);
+        }
+        if (strlen($digits) === 10) {
+            $digits = '91'.$digits;
+        }
+
+        return 'https://wa.me/'.$digits;
+    }
+
+    /** Default copy when contact_working_hours / about_working_hours are empty (public contact page). */
+    public static function defaultContactWorkingHours(): string
+    {
+        return "Mon–Sat: 8:00 AM – 8:00 PM\nSunday: 9:00 AM – 2:00 PM";
+    }
+
+    public function heroPrimaryLabel(): string
+    {
+        return trim((string) ($this->hero_cta_primary_label ?? '')) ?: 'Book Appointment';
+    }
+
+    public function heroPrimaryUrl(): string
+    {
+        $u = trim((string) ($this->hero_cta_primary_url ?? ''));
+
+        return $u !== '' ? self::resolvePublicUrl($u) : route('public.appointments.create');
+    }
+
+    public function heroSecondaryLabel(): string
+    {
+        return trim((string) ($this->hero_cta_secondary_label ?? '')) ?: 'View Reports';
+    }
+
+    public function heroSecondaryUrl(): string
+    {
+        $u = trim((string) ($this->hero_cta_secondary_url ?? ''));
+
+        return $u !== '' ? self::resolvePublicUrl($u) : route('public.reports.search');
+    }
+
+    public function heroTertiaryLabel(): ?string
+    {
+        $t = trim((string) ($this->hero_cta_tertiary_label ?? ''));
+
+        return $t !== '' ? $t : null;
+    }
+
+    public function heroTertiaryUrl(): ?string
+    {
+        $u = trim((string) ($this->hero_cta_tertiary_url ?? ''));
+        if ($u !== '') {
+            return self::resolvePublicUrl($u);
+        }
+
+        $phone = trim((string) ($this->contact_phone ?? '')) ?: trim((string) ($this->phone ?? ''));
+
+        return self::whatsappUrlFromPhone($phone);
+    }
+
+    /**
+     * @return list<array{label: string, url: string, image?: string}>
+     */
+    public function trustStripItemsForDisplay(): array
+    {
+        $items = $this->trust_strip_items ?? [];
+        if (! is_array($items)) {
+            return [];
+        }
+        $out = [];
+        foreach ($items as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $label = trim((string) ($item['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            $row = [
+                'label' => $label,
+                'url' => trim((string) ($item['url'] ?? '')),
+            ];
+            if (! empty($item['image'])) {
+                $row['image'] = (string) $item['image'];
+            }
+            $out[] = $row;
+        }
+
+        return $out;
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public static function defaultAboutWhyCards(): array
+    {
+        return [
+            ['title' => 'Accurate Reports', 'body' => 'Validated methods, internal quality controls, and clear reporting so you and your doctor can make informed decisions.'],
+            ['title' => 'Fast Turnaround', 'body' => 'Efficient processing with same-day or next-day results for many routine tests, without compromising accuracy.'],
+            ['title' => 'Experienced Team', 'body' => 'Qualified pathologists and trained technologists oversee every stage of sample handling and analysis.'],
+            ['title' => 'Modern Equipment', 'body' => 'Up-to-date analysers and digital workflows reduce error and support consistent, reproducible results.'],
+            ['title' => 'Trusted by Patients', 'body' => 'Thousands rely on us for routine checkups, specialised panels, and pre-treatment workups.'],
+        ];
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public function aboutWhyCardsForDisplay(): array
+    {
+        $raw = $this->about_why_cards ?? [];
+        if (! is_array($raw)) {
+            return self::defaultAboutWhyCards();
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+        }
+
+        return count($out) > 0 ? $out : self::defaultAboutWhyCards();
+    }
+
+    /**
+     * @return array{tests: string, patients: string, years: string}
+     */
+    public function aboutStatsDisplay(): array
+    {
+        return [
+            'tests' => trim((string) ($this->about_stat_tests ?? '')) ?: '10,000+',
+            'patients' => trim((string) ($this->about_stat_patients ?? '')) ?: '5,000+',
+            'years' => trim((string) ($this->about_stat_years ?? '')) ?: '15+',
+        ];
     }
 }

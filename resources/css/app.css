@@ -6,6 +6,17 @@
     display: none !important;
 }
 
+/* Public marketing site — keyboard focus (WCAG 2.4.7) */
+.site-public :where(a, button, input:not([type="hidden"]), select, textarea, summary):focus-visible {
+    outline: 2px solid var(--primary-color, #4f46e5);
+    outline-offset: 2px;
+}
+
+.site-public :where(a, button):focus:not(:focus-visible) {
+    outline: none;
+}
+
+
 .line-clamp-4 {
     display: -webkit-box;
     -webkit-line-clamp: 4;

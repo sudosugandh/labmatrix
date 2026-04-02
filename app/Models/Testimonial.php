@@ -10,6 +10,7 @@ class Testimonial extends Model
     protected $fillable = [
         'lab_id',
         'name',
+        'city',
         'photo',
         'quote',
         'rating',

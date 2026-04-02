@@ -61,6 +61,7 @@
                 <p class="mt-3 text-sm text-amber-800">Please check the number and try again, or contact us if you need help.</p>
                 <div class="mt-4 flex flex-wrap gap-3">
                     <a href="{{ route('public.reports.search') }}" class="inline-flex items-center px-4 py-2 rounded-xl font-semibold text-white text-sm shadow-sm transition hover:opacity-95" style="background-color: var(--primary-color);">Try again</a>
+                    <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Book a test</a>
                     <a href="{{ url('/contact') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Contact us</a>
                 </div>
             </div>
@@ -72,7 +73,29 @@
                     <h2 class="font-display text-lg font-semibold text-slate-900">Your tests &amp; order status</h2>
                     <p class="mt-1 text-sm text-slate-600">Progress for each order linked to your phone. When a report is released, you’ll also see it under <span class="font-medium text-slate-800">Ready to download</span> below.</p>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="md:hidden divide-y divide-slate-100">
+                    @foreach($orders as $order)
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="font-mono text-sm font-semibold text-slate-800 tabular-nums">Order #{{ $order->id }}</span>
+                                <span class="text-xs text-slate-500 tabular-nums shrink-0">{{ $order->updated_at->format('M j, Y') }}</span>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900 leading-snug">{{ $order->test?->name ?? $order->package?->name ?? '—' }}</p>
+                            <p class="text-sm text-slate-600 leading-relaxed">{{ $order->publicStatusLine() }}</p>
+                            <div class="pt-1">
+                                @if($order->report && $order->report->workflow_status === 'released' && $order->report->status === 'ready')
+                                    <a href="{{ route('public.reports.download', $order->report->id) }}" class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl font-semibold text-sm text-white px-4 transition hover:brightness-110" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, #1e293b) 100%);">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        Download PDF
+                                    </a>
+                                @else
+                                    <p class="text-xs text-slate-400 text-center py-2 rounded-lg bg-slate-50 border border-slate-100">PDF not ready yet — check back after the lab releases your report.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="hidden md:block overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-200 text-sm">
                         <thead class="bg-slate-50/90">
                             <tr>
@@ -173,6 +196,7 @@
                 <p class="mt-1 text-sm text-slate-500 max-w-md mx-auto">We couldn’t find any lab orders for this phone number. If you recently booked, try the number you used when registering.</p>
                 <div class="mt-6 flex flex-wrap justify-center gap-3">
                     <a href="{{ route('public.reports.search') }}" class="inline-flex items-center px-4 py-2 rounded-xl font-semibold text-white text-sm shadow-sm" style="background-color: var(--primary-color);">Search again</a>
+                    <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Book a test</a>
                     <a href="{{ url('/contact') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Contact us</a>
                 </div>
             </div>

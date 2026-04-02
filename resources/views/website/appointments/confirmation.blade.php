@@ -38,6 +38,15 @@
     <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-100/50 via-transparent to-transparent pointer-events-none"></div>
     <div class="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        <div class="mb-6 rounded-2xl border border-slate-200/80 bg-white/95 backdrop-blur-sm px-4 py-4 sm:px-6 sm:py-5 shadow-sm">
+            <p class="text-xs font-semibold uppercase tracking-wider text-slate-500 mb-3">What happens next</p>
+            <ol class="grid gap-3 sm:grid-cols-3 text-sm text-slate-700">
+                <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white" style="background: var(--primary-color);">1</span><span>We’ll confirm your slot and may reach you on the phone you provided if anything needs to change.</span></li>
+                <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white" style="background: var(--primary-color);">2</span><span>After your visit, reports appear under <strong class="text-slate-900">Patient reports</strong> when the lab releases them.</span></li>
+                <li class="flex gap-3"><span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-bold text-white" style="background: var(--primary-color);">3</span><span>Save your reference number above — you can use it with <strong class="text-slate-900">My appointments</strong> anytime.</span></li>
+            </ol>
+        </div>
+
         <div class="rounded-2xl border border-slate-200/80 bg-white shadow-xl shadow-slate-200/50 overflow-hidden">
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-0 lg:divide-x divide-slate-100">
                 {{-- Details --}}
@@ -187,19 +196,23 @@
                 {{-- Actions --}}
                 <div class="lg:col-span-2 p-6 sm:p-8 bg-slate-50/50 border-t lg:border-t-0 border-slate-100">
                     <p class="text-sm font-semibold text-slate-900 mb-1">Next steps</p>
-                    <p class="text-xs text-slate-500 mb-4">View full details, print this page, or manage your bookings.</p>
+                    <p class="text-xs text-slate-500 mb-4">View full details, download a PDF receipt, or manage your bookings.</p>
                     <div class="space-y-3">
                         <a href="{{ route('public.appointments.show', $appointment) }}" class="flex items-center justify-center gap-2 w-full rounded-xl py-3.5 px-4 text-sm font-semibold text-white shadow-lg transition-all hover:shadow-xl hover:-translate-y-0.5" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 18px color-mix(in srgb, var(--primary-color) 35%, transparent);">
                             <svg class="w-5 h-5 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
                             View details
                         </a>
-                        <a href="{{ route('public.appointments.print', $appointment) }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl py-3.5 px-4 text-sm font-semibold text-slate-900 bg-white border-2 border-slate-200 hover:bg-slate-50 transition-colors">
-                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                            Print confirmation
+                        <a href="{{ route('public.appointments.confirmation.download', $appointment) }}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center gap-2 w-full rounded-xl py-3.5 px-4 text-sm font-semibold text-slate-900 bg-white border-2 border-slate-200 hover:bg-slate-50 transition-colors">
+                            <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            Download confirmation
                         </a>
                         <a href="{{ route('public.appointments.search') }}" class="flex items-center justify-center gap-2 w-full rounded-xl py-3.5 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors">
                             <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                             My appointments
+                        </a>
+                        <a href="{{ route('public.reports.search') }}" class="flex items-center justify-center gap-2 w-full rounded-xl py-3.5 px-4 text-sm font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 transition-colors">
+                            <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            Patient reports
                         </a>
                         <a href="{{ route('home') }}" class="inline-flex items-center justify-center gap-1.5 w-full rounded-lg py-2 px-3 text-sm text-slate-500 bg-transparent hover:text-slate-700 transition-colors">
                             <svg class="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>

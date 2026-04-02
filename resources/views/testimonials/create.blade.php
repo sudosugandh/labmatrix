@@ -18,7 +18,7 @@
         @csrf
 
         <x-form-section title="Testimonial" description="Name, quote, optional photo and rating">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <x-form-input
                     label="Name"
                     name="name"
@@ -26,6 +26,13 @@
                     required
                     placeholder="e.g., Rajesh K."
                     value="{{ old('name') }}"
+                />
+                <x-form-input
+                    label="City (optional)"
+                    name="city"
+                    type="text"
+                    placeholder="e.g., New Delhi"
+                    value="{{ old('city') }}"
                 />
                 <div>
                     <label for="rating" class="block text-sm font-medium text-gray-700 mb-2">Rating (1–5, optional)</label>

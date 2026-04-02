@@ -14,6 +14,7 @@ use App\Models\TestPackage;
 use App\Models\WebsiteSetting;
 use App\Services\NotificationService;
 use App\Services\WhatsAppService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -58,6 +59,14 @@ class PublicAppointmentController extends Controller
                     ->get();
             }
 
+            $referringDoctors = collect();
+            if ($bookingType === 'patient') {
+                $referringDoctors = Doctor::forCurrentLab()
+                    ->where('is_active', true)
+                    ->orderBy('name')
+                    ->get(['id', 'name', 'phone']);
+            }
+
             $labUsesAppointmentSlots = AppointmentSlot::forCurrentLab()->active()->exists();
 
             $tests = Test::forCurrentLab()
@@ -75,7 +84,7 @@ class PublicAppointmentController extends Controller
                     ->first();
             }
 
-            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'labUsesAppointmentSlots', 'tests', 'payAtBookingEnabled', 'payAtBookingSetupHint', 'referralDoctor'));
+            return view('website.appointments.create', compact('settings', 'menuItems', 'packages', 'bookingType', 'doctors', 'referringDoctors', 'labUsesAppointmentSlots', 'tests', 'payAtBookingEnabled', 'payAtBookingSetupHint', 'referralDoctor'));
         }
 
         // Show selection page
@@ -121,6 +130,25 @@ class PublicAppointmentController extends Controller
             'doctor_specialization' => 'nullable|string|max:255',
             'doctor_clinic' => 'nullable|string|max:255',
             'referral_number_manual' => 'nullable|string|max:255',
+            'referring_doctor_select' => [
+                'nullable',
+                'string',
+                function (string $attribute, mixed $value, \Closure $fail) use ($request, $labId): void {
+                    if ($request->input('booking_type') !== 'patient') {
+                        return;
+                    }
+                    if ($value === null || $value === '') {
+                        return;
+                    }
+                    if ($value === 'other') {
+                        return;
+                    }
+                    if (! is_numeric($value) || ! Doctor::query()->where('lab_id', $labId)->where('is_active', true)->whereKey((int) $value)->exists()) {
+                        $fail(__('Please choose a valid referring doctor from the list.'));
+                    }
+                },
+            ],
+            'referring_doctor_custom_name' => 'nullable|required_if:referring_doctor_select,other|string|max:255',
             'referring_doctor_name' => 'nullable|string|max:255',
             'referring_doctor_phone' => 'nullable|string|max:20',
             'prescription_file' => [
@@ -313,6 +341,36 @@ class PublicAppointmentController extends Controller
                     $referralDoctorId = $refDoctorFromLink->id;
                 }
             }
+
+            $patientReferringName = null;
+            $patientReferringPhone = null;
+            if ($validated['booking_type'] === 'patient' && ! $refDoctorFromLink) {
+                $sel = $validated['referring_doctor_select'] ?? null;
+                if ($sel === 'other') {
+                    $patientReferringName = $validated['referring_doctor_custom_name'] ?? null;
+                    $patientReferringPhone = $validated['referring_doctor_phone'] ?? null;
+                    if ($patientReferringName) {
+                        Doctor::create([
+                            'lab_id' => $labId,
+                            'name' => $patientReferringName,
+                            'phone' => $patientReferringPhone,
+                            'is_active' => false,
+                            'commission_type' => 'percentage',
+                            'commission_rate' => 0,
+                        ]);
+                    }
+                } elseif ($sel !== null && $sel !== '' && is_numeric($sel)) {
+                    $pickedReferrer = Doctor::where('lab_id', $labId)
+                        ->where('is_active', true)
+                        ->find((int) $sel);
+                    if ($pickedReferrer) {
+                        $patientReferringName = $pickedReferrer->name;
+                        $phoneOverride = trim((string) ($validated['referring_doctor_phone'] ?? ''));
+                        $patientReferringPhone = $phoneOverride !== '' ? $validated['referring_doctor_phone'] : $pickedReferrer->phone;
+                    }
+                }
+            }
+
             $orderDoctorId = $doctorId ?? $referralDoctorId;
 
             // Handle prescription file upload
@@ -330,8 +388,8 @@ class PublicAppointmentController extends Controller
                 'lab_id' => $labId,
                 'patient_id' => $patient->id,
                 'doctor_id' => $doctorId,
-                'referring_doctor_name' => $validated['referring_doctor_name'] ?? $refDoctorFromLink?->name,
-                'referring_doctor_phone' => $validated['referring_doctor_phone'] ?? $refDoctorFromLink?->phone,
+                'referring_doctor_name' => $patientReferringName ?? $refDoctorFromLink?->name,
+                'referring_doctor_phone' => $patientReferringPhone ?? $refDoctorFromLink?->phone,
                 'prescription_file' => $prescriptionFilePath,
                 'package_id' => $package ? $package->id : null,
                 'appointment_date' => $validated['appointment_date'],
@@ -615,7 +673,7 @@ class PublicAppointmentController extends Controller
     }
 
     /**
-     * Print/download appointment confirmation.
+     * Print-friendly HTML view (browser print / save as PDF).
      */
     public function print(Appointment $appointment)
     {
@@ -624,10 +682,30 @@ class PublicAppointmentController extends Controller
             abort(404);
         }
 
-        $appointment->load('patient');
+        $appointment->load(['patient', 'package.tests', 'tests', 'doctor']);
         $settings = WebsiteSetting::getForCurrentLab();
 
         return view('website.appointments.print', compact('appointment', 'settings'));
+    }
+
+    /**
+     * Download appointment confirmation as PDF.
+     */
+    public function downloadConfirmation(Appointment $appointment)
+    {
+        if ($appointment->lab_id !== currentLabId()) {
+            abort(404);
+        }
+
+        $appointment->load(['patient', 'package.tests', 'tests', 'doctor']);
+        $settings = WebsiteSetting::getForCurrentLab();
+
+        $pdf = Pdf::loadView('website.appointments.confirmation-pdf', compact('appointment', 'settings'));
+        $pdf->setPaper('a4', 'portrait');
+
+        $filename = 'appointment-'.str_pad((string) $appointment->id, 6, '0', STR_PAD_LEFT).'-confirmation.pdf';
+
+        return $pdf->download($filename);
     }
 
     /**

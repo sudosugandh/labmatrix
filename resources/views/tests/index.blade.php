@@ -3,7 +3,7 @@
         <div class="flex justify-between items-center">
             <div>
                 <h2 class="text-3xl font-bold text-slate-900">Tests</h2>
-                <p class="text-sm text-slate-500 mt-1">Manage diagnostic tests and pricing</p>
+                <p class="text-sm text-slate-500 mt-1">Manage tests, pricing, and per-test parameters (units &amp; reference ranges for result entry).</p>
             </div>
             <a href="{{ route('tests.create') }}" class="inline-flex items-center px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 shadow-lg shadow-violet-500/25 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-200">
                 <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -152,6 +152,7 @@
                             <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Test Name</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Description</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Price</th>
+                            <th class="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">Parameters</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
                         </tr>
                     </thead>
@@ -169,6 +170,13 @@
                                         ₹{{ number_format($test->price, 2) }}
                                     </span>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-center">
+                                    @if(($test->parameters_count ?? 0) > 0)
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700" title="Defined on Edit test → Test Parameters">{{ $test->parameters_count }} row(s)</span>
+                                    @else
+                                        <span class="text-xs text-amber-700 bg-amber-50 px-2 py-1 rounded-lg" title="Add parameters under Edit test">None</span>
+                                    @endif
+                                </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex items-center justify-end space-x-2">
                                         <a href="{{ route('tests.consumables.index', $test) }}" 
@@ -180,7 +188,7 @@
                                         </a>
                                         <a href="{{ route('tests.edit', $test) }}" 
                                             class="p-2 text-violet-600 hover:bg-violet-50 rounded-lg transition-colors" 
-                                            title="Edit">
+                                            title="Edit test, units &amp; reference ranges">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
                                             </svg>

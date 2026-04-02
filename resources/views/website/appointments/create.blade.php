@@ -6,7 +6,11 @@
     border-radius: 0.75rem;
     border: 1px solid rgb(226 232 240 / 0.9);
     padding: 0.75rem 1rem;
+    min-height: 3rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+}
+@media (max-width: 640px) {
+    .booking-input { font-size: 1rem; }
 }
 .booking-input:focus {
     outline: none;
@@ -25,13 +29,16 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
             Change booking type
         </a>
-        <div class="flex items-center gap-3 mb-4">
-            <span class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold text-white shadow-lg" style="background: var(--primary-color); box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-color) 50%, transparent);">1</span>
-            <span class="w-12 h-0.5 bg-white/30"></span>
-            <span class="flex h-10 w-10 items-center justify-center rounded-full text-sm font-bold border-2 border-white/40 text-white/80">2</span>
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 mb-4" aria-label="Booking progress">
+            <span class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-emerald-200 ring-1 ring-emerald-400/30">
+                <svg class="w-4 h-4 text-emerald-300 shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+                Type chosen
+            </span>
+            <span class="hidden sm:inline text-white/30" aria-hidden="true">→</span>
+            <span class="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white ring-2 ring-white/40" style="background: color-mix(in srgb, var(--primary-color) 55%, transparent);">Step 2 · Details</span>
         </div>
-        <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3">Book an Appointment</h1>
-        <p class="text-lg md:text-xl text-slate-300 max-w-2xl">Schedule your visit with our lab. Fast, reliable, and convenient.</p>
+        <h1 class="font-display text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white tracking-tight mb-3 [text-wrap:balance]">Book an Appointment</h1>
+        <p class="text-base sm:text-lg md:text-xl text-slate-300 max-w-2xl leading-relaxed">Fill in your details below — it usually takes about 2 minutes. Your information is used only for this booking and your care.</p>
     </div>
 </section>
 
@@ -96,7 +103,7 @@
             </div>
         @endif
 
-        <form method="POST" action="{{ route('public.appointments.store') }}" class="space-y-8">
+        <form method="POST" action="{{ route('public.appointments.store') }}" class="space-y-8" x-data="{ submitting: false }" @submit="submitting = true">
             @csrf
 
             <input type="hidden" name="booking_type" value="{{ $bookingType ?? 'patient' }}">
@@ -345,27 +352,81 @@
                     </svg>
                     Referring Doctor Information (Optional)
                 </h2>
-                <p class="text-sm text-gray-600 mb-4">If you have a referral from a doctor, please provide their details below.</p>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <p class="text-sm text-gray-600 mb-4">Choose your referring doctor from the list, or pick <strong class="font-medium text-slate-800">Other doctor</strong> to enter a name. New doctors you add are saved for the lab to review and appear in the list once approved.</p>
+
+                <div class="space-y-6"
+                    x-data="{
+                        refChoice: @js((string) old('referring_doctor_select', '')),
+                        refPhone: @js((string) old('referring_doctor_phone', '')),
+                        hintListed: @js(__('Choosing a doctor from the list fills in their number; you can edit it. For other doctor, add a phone if you know it.')),
+                        hintOther: @js(__('Add a phone if you have it — it helps the lab reach the doctor.')),
+                        onRefChange(ev) {
+                            const v = this.refChoice;
+                            if (this.$refs.phoneHint) {
+                                this.$refs.phoneHint.textContent = (v === 'other') ? this.hintOther : this.hintListed;
+                            }
+                            const target = ev && ev.target ? ev.target : this.$refs.refSel;
+                            if (v && v !== 'other' && target && target.selectedOptions && target.selectedOptions[0]) {
+                                this.refPhone = target.selectedOptions[0].getAttribute('data-phone') || '';
+                            } else if (v === '') {
+                                this.refPhone = '';
+                            }
+                        },
+                        initReferringDoctor() {
+                            const sel = this.$refs.refSel;
+                            if (! sel) return;
+                            if (this.refChoice && this.refChoice !== 'other' && ! String(this.refPhone || '').trim()) {
+                                const opt = sel.selectedOptions[0];
+                                if (opt) this.refPhone = opt.getAttribute('data-phone') || '';
+                            }
+                            if (this.$refs.phoneHint) {
+                                this.$refs.phoneHint.textContent = (this.refChoice === 'other') ? this.hintOther : this.hintListed;
+                            }
+                        }
+                    }"
+                    x-init="$nextTick(() => initReferringDoctor())">
                     <div>
-                        <label for="referring_doctor_name" class="block text-sm font-medium text-gray-700 mb-2">Doctor's Name</label>
-                        <input type="text" name="referring_doctor_name" id="referring_doctor_name" value="{{ old('referring_doctor_name') }}"
-                            placeholder="Enter doctor's name"
-                            class="block w-full booking-input @error('referring_doctor_name') border-red-500 @enderror">
-                        @error('referring_doctor_name')
+                        <label for="referring_doctor_select" class="block text-sm font-medium text-gray-700 mb-2">Referring doctor</label>
+                        <select name="referring_doctor_select" id="referring_doctor_select" x-ref="refSel"
+                            x-model="refChoice"
+                            @change="onRefChange($event)"
+                            class="block w-full booking-input @error('referring_doctor_select') border-red-500 @enderror">
+                            <option value="">{{ __('No referring doctor') }}</option>
+                            @foreach($referringDoctors ?? [] as $refDoc)
+                                <option value="{{ $refDoc->id }}" data-phone="{{ e($refDoc->phone ?? '') }}"
+                                    {{ (string) old('referring_doctor_select') === (string) $refDoc->id ? 'selected' : '' }}>
+                                    {{ $refDoc->name }}@if($refDoc->phone) — {{ $refDoc->phone }}@endif
+                                </option>
+                            @endforeach
+                            <option value="other" {{ old('referring_doctor_select') === 'other' ? 'selected' : '' }}>{{ __('Other doctor (enter name below)') }}</option>
+                        </select>
+                        @error('referring_doctor_select')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div id="referring_doctor_other_wrap" x-show="refChoice === 'other'" x-cloak class="space-y-2">
+                        <label for="referring_doctor_custom_name" class="block text-sm font-medium text-gray-700 mb-2">{{ __("Other doctor's name") }} <span class="text-red-600">*</span></label>
+                        <input type="text" name="referring_doctor_custom_name" id="referring_doctor_custom_name" value="{{ old('referring_doctor_custom_name') }}"
+                            placeholder="{{ __('Enter the doctor\'s full name') }}"
+                            class="block w-full booking-input @error('referring_doctor_custom_name') border-red-500 @enderror"
+                            autocomplete="name">
+                        @error('referring_doctor_custom_name')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>
 
                     <div>
-                        <label for="referring_doctor_phone" class="block text-sm font-medium text-gray-700 mb-2">Doctor's Phone</label>
-                        <input type="text" name="referring_doctor_phone" id="referring_doctor_phone" value="{{ old('referring_doctor_phone') }}"
-                            placeholder="Enter doctor's phone number"
-                            class="block w-full booking-input @error('referring_doctor_phone') border-red-500 @enderror">
+                        <label for="referring_doctor_phone" class="block text-sm font-medium text-gray-700 mb-2">{{ __("Doctor's phone") }} <span class="text-slate-400 font-normal">({{ __('optional') }})</span></label>
+                        <input type="text" name="referring_doctor_phone" id="referring_doctor_phone"
+                            x-model="refPhone"
+                            placeholder="{{ __('Phone number') }}"
+                            class="block w-full booking-input @error('referring_doctor_phone') border-red-500 @enderror"
+                            inputmode="tel" autocomplete="tel">
                         @error('referring_doctor_phone')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
+                        <p class="mt-1 text-xs text-gray-500" x-ref="phoneHint">{{ __('Choosing a doctor from the list fills in their number; you can edit it. For other doctor, add a phone if you know it.') }}</p>
                     </div>
                 </div>
             </div>
@@ -554,10 +615,15 @@
                 </div>
             </div>
 
-            <div class="flex items-center justify-center pt-4">
-                <button type="submit" class="w-full md:w-auto py-4 px-12 rounded-2xl text-lg font-semibold text-white shadow-xl hover:shadow-2xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 24px color-mix(in srgb, var(--primary-color) 45%, transparent);">
-                    Book Appointment
+            <div class="flex flex-col items-center justify-center pt-4 gap-2">
+                <button type="submit" class="w-full md:w-auto min-h-[52px] py-4 px-12 rounded-2xl text-base sm:text-lg font-semibold text-white shadow-xl transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-70 disabled:pointer-events-none disabled:translate-y-0 touch-manipulation" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 24px color-mix(in srgb, var(--primary-color) 45%, transparent);" :disabled="submitting">
+                    <span x-show="!submitting" class="inline-flex items-center justify-center gap-2">Book appointment</span>
+                    <span x-show="submitting" x-cloak class="inline-flex items-center justify-center gap-2">
+                        <svg class="animate-spin h-5 w-5 shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" aria-hidden="true"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                        Submitting…
+                    </span>
                 </button>
+                <p class="text-xs text-slate-500 text-center max-w-md" x-show="!submitting">Please wait on this page after tapping submit — do not refresh.</p>
             </div>
         </form>
             </div>

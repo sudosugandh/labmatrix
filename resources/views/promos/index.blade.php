@@ -29,7 +29,8 @@
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Order</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Title</th>
-                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Valid Until</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Valid from</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Valid until</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
                             <th class="px-6 py-4 text-right text-xs font-semibold text-gray-600 uppercase">Actions</th>
                         </tr>
@@ -44,6 +45,7 @@
                                         <div class="text-sm text-gray-500 max-w-md line-clamp-1">{{ $p->short_text }}</div>
                                     @endif
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $p->valid_from ? $p->valid_from->format('M d, Y') : '—' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ $p->valid_until ? $p->valid_until->format('M d, Y') : '—' }}</td>
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     @if($p->is_active)

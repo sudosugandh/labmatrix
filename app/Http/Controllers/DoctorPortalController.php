@@ -8,6 +8,7 @@ use App\Models\Menu;
 use App\Models\Report;
 use App\Models\TestOrder;
 use App\Models\WebsiteSetting;
+use App\Support\PhoneDigits;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controllers\HasMiddleware;
@@ -38,7 +39,7 @@ class DoctorPortalController extends Controller implements HasMiddleware
     public function login(Request $request): RedirectResponse
     {
         $request->validate([
-            'phone' => 'required|string|max:20',
+            'phone' => 'required|string|max:255',
             'password' => 'required|string',
         ]);
 
@@ -47,10 +48,31 @@ class DoctorPortalController extends Controller implements HasMiddleware
             return back()->withErrors(['phone' => 'Lab context missing. Open this page from your lab website.'])->onlyInput('phone');
         }
 
-        $doctor = Doctor::where('lab_id', $labId)
-            ->where('phone', $request->phone)
-            ->where('is_active', true)
-            ->first();
+        $identifier = trim((string) $request->phone);
+
+        if (str_contains($identifier, '@')) {
+            $request->validate([
+                'phone' => 'email',
+            ]);
+
+            $doctor = Doctor::query()
+                ->where('lab_id', $labId)
+                ->where('is_active', true)
+                ->whereNotNull('email')
+                ->whereRaw('LOWER(TRIM(email)) = ?', [strtolower($identifier)])
+                ->first();
+        } else {
+            $normalized = PhoneDigits::normalize($identifier);
+            if (! $normalized) {
+                return back()->withErrors(['phone' => 'Enter a valid phone number or email.'])->onlyInput('phone');
+            }
+
+            $doctor = Doctor::query()
+                ->where('lab_id', $labId)
+                ->where('is_active', true)
+                ->get()
+                ->first(fn (Doctor $d) => PhoneDigits::normalize((string) ($d->phone ?? '')) === $normalized);
+        }
 
         if (! $doctor || ! $doctor->password || ! Hash::check($request->password, $doctor->password)) {
             return back()->withErrors(['phone' => 'These credentials do not match our records.'])->onlyInput('phone');

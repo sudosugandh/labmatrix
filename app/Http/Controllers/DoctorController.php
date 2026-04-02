@@ -85,6 +85,12 @@ class DoctorController extends Controller
             'portal_password' => 'nullable|string|min:8|confirmed',
         ]);
 
+        if ($request->filled('portal_password') && ! $request->filled('phone') && ! $request->filled('email')) {
+            return back()
+                ->withInput()
+                ->withErrors(['portal_password' => 'Add a phone number and/or email so the doctor can sign in to the portal.']);
+        }
+
         $data = array_merge($validated, [
             'lab_id' => currentLabId(),
             'is_active' => $request->has('is_active'),
@@ -183,6 +189,12 @@ class DoctorController extends Controller
             'commission_rate' => 'required|numeric|min:0',
             'portal_password' => 'nullable|string|min:8|confirmed',
         ]);
+
+        if ($request->filled('portal_password') && ! $request->filled('phone') && ! $request->filled('email')) {
+            return back()
+                ->withInput()
+                ->withErrors(['portal_password' => 'Add a phone number and/or email so the doctor can sign in to the portal.']);
+        }
 
         $data = array_merge($validated, [
             'is_active' => $request->has('is_active'),

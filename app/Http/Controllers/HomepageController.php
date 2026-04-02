@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WebsiteSetting;
-use App\Models\Test;
-use App\Models\Menu;
-use App\Models\Testimonial;
 use App\Models\Faq;
+use App\Models\Menu;
 use App\Models\Promo;
+use App\Models\Test;
+use App\Models\Testimonial;
+use App\Models\WebsiteSetting;
 
 class HomepageController extends Controller
 {
@@ -16,7 +16,7 @@ class HomepageController extends Controller
         $settings = WebsiteSetting::getForCurrentLab();
         $tests = Test::where('lab_id', currentLabId())
             ->latest()
-            ->take(6)
+            ->take(24)
             ->get();
 
         $testimonials = Testimonial::forCurrentLab()
@@ -26,13 +26,13 @@ class HomepageController extends Controller
 
         $faqs = Faq::forCurrentLab()->active()->orderBy('sort_order')->orderBy('id')->get();
 
-        $promos = Promo::forCurrentLab()->active()->valid()->orderBy('sort_order')->orderBy('id')->take(6)->get();
-        
+        $promos = Promo::forCurrentLab()->active()->valid()->orderBy('sort_order')->orderBy('id')->take(12)->get();
+
         // Get main menu
         $menu = Menu::where('lab_id', currentLabId())
             ->where('name', 'Main Menu')
             ->first();
-        
+
         $menuItems = $menu ? $menu->items : collect();
 
         return view('website.home', compact('settings', 'tests', 'testimonials', 'faqs', 'promos', 'menuItems'));
