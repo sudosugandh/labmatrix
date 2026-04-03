@@ -18,34 +18,34 @@
                 </span>
             @endif
         </div>
-        <div class="flex gap-2">
+        <div class="flex flex-wrap items-center gap-2">
             @if(($lab->status ?? 'active') === 'suspended')
                 <form method="POST" action="{{ route('super-admin.labs.activate', $lab) }}" class="inline">
                     @csrf
-                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                        Activate Lab
+                    <button type="submit" class="sa-icon-btn border border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700" title="Activate lab" aria-label="Activate lab">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                     </button>
                 </form>
             @else
                 <form method="POST" action="{{ route('super-admin.labs.suspend', $lab) }}" class="inline" onsubmit="return confirm('Are you sure you want to suspend this lab?');">
                     @csrf
-                    <button type="submit" class="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                        Suspend Lab
+                    <button type="submit" class="sa-icon-btn border border-amber-500 bg-amber-500 text-white shadow-sm hover:bg-amber-600" title="Suspend lab" aria-label="Suspend lab">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
                     </button>
                 </form>
             @endif
-            <a href="{{ route('super-admin.labs.edit', $lab) }}" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                Edit Lab
+            <a href="{{ route('super-admin.labs.edit', $lab) }}" class="sa-icon-btn border border-violet-600 bg-violet-600 text-white shadow-sm hover:bg-violet-700" title="Edit lab" aria-label="Edit lab">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
             </a>
             <form method="POST" action="{{ route('super-admin.labs.destroy', $lab) }}" class="inline" onsubmit="return confirm('Are you sure you want to delete this lab? This will delete all associated data including patients, orders, and reports. This action cannot be undone!');">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                    Delete Lab
+                <button type="submit" class="sa-icon-btn border border-red-600 bg-red-600 text-white shadow-sm hover:bg-red-700" title="Delete lab" aria-label="Delete lab">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                 </button>
             </form>
-            <a href="{{ route('super-admin.labs.index') }}" class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
-                Back to Labs
+            <a href="{{ route('super-admin.labs.index') }}" class="sa-icon-btn border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50" title="Back to labs list" aria-label="Back to labs list">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             </a>
         </div>
     </div>
@@ -131,8 +131,8 @@
                         </p>
                     </div>
                     <div class="flex items-end">
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                            Update Level
+                        <button type="submit" class="sa-icon-btn border border-violet-600 bg-violet-600 text-white shadow-sm hover:bg-violet-700" title="Update lab level" aria-label="Update lab level">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         </button>
                     </div>
                 </div>
@@ -144,9 +144,9 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-white">Domains ({{ $lab->domains_count }})</h3>
-            <button onclick="document.getElementById('add-domain-form').classList.toggle('hidden')" 
-                    class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-1 px-4 rounded-lg transition-all">
-                + Add Domain
+            <button type="button" onclick="document.getElementById('add-domain-form').classList.toggle('hidden')" 
+                    class="sa-icon-btn border border-white/30 bg-white/15 text-white hover:bg-white/25" title="Add domain" aria-label="Add domain">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             </button>
         </div>
         <div class="p-6">
@@ -165,12 +165,12 @@
                             <label for="is_active" class="ml-2 text-sm text-gray-700">Active</label>
                         </div>
                         <div class="flex gap-2">
-                            <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                                Add Domain
+                            <button type="submit" class="sa-icon-btn border border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700" title="Save domain" aria-label="Save domain">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             </button>
                             <button type="button" onclick="document.getElementById('add-domain-form').classList.add('hidden')" 
-                                    class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
-                                Cancel
+                                    class="sa-icon-btn border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50" title="Cancel" aria-label="Cancel">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
                     </div>
@@ -195,8 +195,12 @@
                                     @csrf
                                     @method('PUT')
                                     <input type="hidden" name="is_active" value="{{ $domain->is_active ? 0 : 1 }}">
-                                    <button type="submit" class="px-3 py-1 text-sm font-medium rounded-lg {{ $domain->is_active ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200' : 'bg-green-100 text-green-800 hover:bg-green-200' }} transition-colors">
-                                        {{ $domain->is_active ? 'Deactivate' : 'Activate' }}
+                                    <button type="submit" class="sa-icon-btn border {{ $domain->is_active ? 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100' : 'border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}" title="{{ $domain->is_active ? 'Deactivate domain' : 'Activate domain' }}" aria-label="{{ $domain->is_active ? 'Deactivate domain' : 'Activate domain' }}">
+                                        @if($domain->is_active)
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/></svg>
+                                        @else
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @endif
                                     </button>
                                 </form>
                                 <form method="POST" action="{{ route('super-admin.labs.domains.destroy', [$lab, $domain]) }}" 
@@ -204,7 +208,9 @@
                                       onsubmit="return confirm('Are you sure you want to delete this domain? This action cannot be undone.');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="px-3 py-1 text-sm font-medium text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors">Delete</button>
+                                    <button type="submit" class="sa-icon-btn border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Delete domain" aria-label="Delete domain">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
                                 </form>
                             </div>
                         </div>
@@ -220,9 +226,9 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-teal-500 to-cyan-600 flex items-center justify-between">
             <h3 class="text-lg font-semibold text-white">Users ({{ $lab->users_count }})</h3>
-            <button onclick="document.getElementById('add-user-form').classList.toggle('hidden')" 
-                    class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-1 px-4 rounded-lg transition-all">
-                + Add User
+            <button type="button" onclick="document.getElementById('add-user-form').classList.toggle('hidden')" 
+                    class="sa-icon-btn border border-white/30 bg-white/15 text-white hover:bg-white/25" title="Add user" aria-label="Add user">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
             </button>
         </div>
         <div class="p-6">
@@ -245,12 +251,12 @@
                             <option value="staff">Staff</option>
                         </select>
                         <div class="flex gap-2">
-                            <button type="submit" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-2 px-4 rounded-lg">
-                                Add User
+                            <button type="submit" class="sa-icon-btn border border-teal-600 bg-teal-600 text-white shadow-sm hover:bg-teal-700" title="Save user" aria-label="Save user">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             </button>
                             <button type="button" onclick="document.getElementById('add-user-form').classList.add('hidden')" 
-                                    class="bg-gray-500 hover:bg-gray-600 text-white font-semibold py-2 px-4 rounded-lg">
-                                Cancel
+                                    class="sa-icon-btn border border-slate-300 bg-slate-500 text-white shadow-sm hover:bg-slate-600" title="Cancel" aria-label="Cancel">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
                     </div>
@@ -284,7 +290,9 @@
                                               onsubmit="return confirm('Are you sure you want to delete this user?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
+                                            <button type="submit" class="sa-icon-btn border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Delete user" aria-label="Delete user">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                            </button>
                                         </form>
                                     </td>
                                 </tr>
@@ -341,8 +349,8 @@
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                        Update Settings
+                    <button type="submit" class="sa-icon-btn border border-violet-600 bg-violet-600 text-white shadow-sm hover:bg-violet-700" title="Update settings" aria-label="Update settings">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </button>
                 </div>
             </form>
@@ -422,8 +430,8 @@
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                        Update Features
+                    <button type="submit" class="sa-icon-btn border border-emerald-600 bg-emerald-600 text-white shadow-sm hover:bg-emerald-700" title="Update features" aria-label="Update features">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </button>
                 </div>
             </form>
@@ -583,8 +591,8 @@
                     </div>
                 </div>
                 <div class="mt-4 flex justify-end">
-                    <button type="submit" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                        Update Subscription
+                    <button type="submit" class="sa-icon-btn border border-violet-700 bg-violet-700 text-white shadow-sm hover:bg-violet-800" title="Update subscription" aria-label="Update subscription">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                     </button>
                 </div>
             </form>
@@ -598,9 +606,9 @@
                 <h3 class="text-lg font-semibold text-white">Support Notes ({{ $lab->support_notes_count }})</h3>
                 <p class="text-sm text-orange-100 mt-1">Internal notes and comments for support tracking</p>
             </div>
-            <button onclick="document.getElementById('add-note-form').classList.toggle('hidden')" 
-                    class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white font-semibold py-1 px-4 rounded-lg transition-all">
-                + Add Note
+            <button type="button" onclick="document.getElementById('add-note-form').classList.toggle('hidden')" 
+                    class="sa-icon-btn border border-white/30 bg-white/15 text-white hover:bg-white/25" title="Add support note" aria-label="Add support note">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
             </button>
         </div>
         <div class="p-6">
@@ -633,12 +641,12 @@
                         </div>
                     </div>
                     <div class="flex gap-2">
-                        <button type="submit" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all">
-                            Add Note
+                        <button type="submit" class="sa-icon-btn border border-orange-600 bg-orange-600 text-white shadow-sm hover:bg-orange-700" title="Save note" aria-label="Save note">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         </button>
                         <button type="button" onclick="document.getElementById('add-note-form').classList.add('hidden')" 
-                                class="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
-                            Cancel
+                                class="sa-icon-btn border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50" title="Cancel" aria-label="Cancel">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                         </button>
                     </div>
                 </form>
@@ -670,10 +678,8 @@
                                       onsubmit="return confirm('Are you sure you want to delete this note?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="text-red-600 hover:text-red-900">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                        </svg>
+                                    <button type="submit" class="sa-icon-btn border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Delete note" aria-label="Delete note">
+                                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                                     </button>
                                 </form>
                             </div>
@@ -713,11 +719,8 @@
                     <p class="text-xs text-gray-500 mt-1">Download a JSON file containing all lab configuration and metadata</p>
                 </div>
                 <a href="{{ route('super-admin.labs.export-data', $lab) }}" 
-                   class="px-4 py-2 bg-gray-700 hover:bg-gray-800 text-white font-semibold rounded-lg shadow-sm hover:shadow-md transition-all inline-flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export Data
+                   class="sa-icon-btn border border-slate-600 bg-slate-700 text-white shadow-sm hover:bg-slate-800" title="Export lab data (JSON)" aria-label="Export lab data">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </a>
             </div>
         </div>

@@ -164,6 +164,9 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 // Super Admin Routes
 Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/activity', [SuperAdminController::class, 'activity'])->name('activity.index');
+    Route::get('/domains', [SuperAdminController::class, 'domains'])->name('domains.index');
+    Route::get('/users', [SuperAdminController::class, 'users'])->name('users.index');
 
     // Labs Management
     Route::get('/labs', [SuperAdminController::class, 'labs'])->name('labs.index');

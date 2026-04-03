@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Domain;
 use App\Models\Lab;
+use App\Models\SuperAdminAuditLog;
 use App\Models\User;
 use App\Models\Patient;
 use App\Models\TestOrder;
@@ -10,6 +12,7 @@ use App\Models\Report;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 
 class SuperAdminController extends Controller
@@ -57,7 +60,239 @@ class SuperAdminController extends Controller
             ->take(5)
             ->get();
 
-        return view('super-admin.dashboard', compact('stats', 'recentLabs', 'labsByLevel', 'labsByStatus', 'topLabs'));
+        $growthChartConfig = $this->buildPlatformGrowthChartConfig();
+
+        return view('super-admin.dashboard', compact('stats', 'recentLabs', 'labsByLevel', 'labsByStatus', 'topLabs', 'growthChartConfig'));
+    }
+
+    /**
+     * Monthly counts for the super-admin dashboard chart (last 12 months).
+     *
+     * @return array<string, mixed> Chart.js-compatible config
+     */
+    private function buildPlatformGrowthChartConfig(): array
+    {
+        $labels = [];
+        $orders = [];
+        $reports = [];
+        $patients = [];
+        $labs = [];
+
+        for ($i = 11; $i >= 0; $i--) {
+            $start = Carbon::now()->subMonths($i)->startOfMonth();
+            $end = Carbon::now()->subMonths($i)->endOfMonth();
+            $labels[] = $start->format('M \'y');
+            $orders[] = TestOrder::whereBetween('created_at', [$start, $end])->count();
+            $reports[] = Report::whereBetween('created_at', [$start, $end])->count();
+            $patients[] = Patient::whereBetween('created_at', [$start, $end])->count();
+            $labs[] = Lab::whereBetween('created_at', [$start, $end])->count();
+        }
+
+        return [
+            'type' => 'line',
+            'data' => [
+                'labels' => $labels,
+                'datasets' => [
+                    [
+                        'label' => 'Orders',
+                        'data' => $orders,
+                        'borderColor' => 'rgb(124, 58, 237)',
+                        'backgroundColor' => 'rgba(124, 58, 237, 0.12)',
+                        'fill' => true,
+                        'tension' => 0.35,
+                        'borderWidth' => 2,
+                        'pointRadius' => 3,
+                        'pointHoverRadius' => 5,
+                    ],
+                    [
+                        'label' => 'Reports',
+                        'data' => $reports,
+                        'borderColor' => 'rgb(13, 148, 136)',
+                        'backgroundColor' => 'rgba(13, 148, 136, 0.08)',
+                        'fill' => true,
+                        'tension' => 0.35,
+                        'borderWidth' => 2,
+                        'pointRadius' => 3,
+                        'pointHoverRadius' => 5,
+                    ],
+                    [
+                        'label' => 'New patients',
+                        'data' => $patients,
+                        'borderColor' => 'rgb(234, 88, 12)',
+                        'backgroundColor' => 'rgba(234, 88, 12, 0.06)',
+                        'fill' => true,
+                        'tension' => 0.35,
+                        'borderWidth' => 2,
+                        'pointRadius' => 3,
+                        'pointHoverRadius' => 5,
+                    ],
+                    [
+                        'label' => 'New labs',
+                        'data' => $labs,
+                        'borderColor' => 'rgb(100, 116, 139)',
+                        'backgroundColor' => 'rgba(100, 116, 139, 0.06)',
+                        'fill' => false,
+                        'tension' => 0.35,
+                        'borderWidth' => 2,
+                        'borderDash' => [6, 4],
+                        'pointRadius' => 2,
+                        'pointHoverRadius' => 4,
+                    ],
+                ],
+            ],
+            'options' => [
+                'responsive' => true,
+                'maintainAspectRatio' => false,
+                'interaction' => [
+                    'intersect' => false,
+                    'mode' => 'index',
+                ],
+                'plugins' => [
+                    'legend' => [
+                        'position' => 'top',
+                        'align' => 'end',
+                        'labels' => [
+                            'usePointStyle' => true,
+                            'boxWidth' => 8,
+                            'boxHeight' => 8,
+                            'padding' => 16,
+                            'color' => '#475569',
+                            'font' => ['size' => 11, 'family' => "'Inter', ui-sans-serif, system-ui, sans-serif"],
+                        ],
+                    ],
+                    'tooltip' => [
+                        'backgroundColor' => 'rgba(15, 23, 42, 0.92)',
+                        'padding' => 12,
+                        'cornerRadius' => 8,
+                    ],
+                ],
+                'scales' => [
+                    'x' => [
+                        'grid' => [
+                            'display' => true,
+                            'color' => 'rgba(148, 163, 184, 0.25)',
+                            'borderDash' => [4, 4],
+                        ],
+                        'ticks' => [
+                            'color' => '#64748b',
+                            'font' => ['size' => 11],
+                        ],
+                    ],
+                    'y' => [
+                        'beginAtZero' => true,
+                        'ticks' => [
+                            'precision' => 0,
+                            'color' => '#64748b',
+                            'font' => ['size' => 11],
+                        ],
+                        'grid' => [
+                            'color' => 'rgba(148, 163, 184, 0.2)',
+                            'borderDash' => [4, 4],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * All domains across labs (platform view).
+     */
+    public function domains(Request $request): View
+    {
+        $query = Domain::query()->with('lab')->orderBy('domain');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('domain', 'like', '%'.$search.'%')
+                    ->orWhereHas('lab', function ($lq) use ($search) {
+                        $lq->where('name', 'like', '%'.$search.'%');
+                    });
+            });
+        }
+
+        if ($request->filled('active')) {
+            if ($request->active === '1') {
+                $query->where('is_active', true);
+            } elseif ($request->active === '0') {
+                $query->where('is_active', false);
+            }
+        }
+
+        $domains = $query->paginate(20)->withQueryString();
+
+        return view('super-admin.domains.index', compact('domains'));
+    }
+
+    /**
+     * All users across labs (platform view).
+     */
+    public function users(Request $request): View
+    {
+        $query = User::query()->with('lab')->orderByDesc('created_at');
+
+        if (! $request->boolean('include_super')) {
+            $query->where('role', '!=', 'super_admin');
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%');
+            });
+        }
+
+        if ($request->filled('role')) {
+            $allowedRoles = ['admin', 'staff', 'user', 'super_admin'];
+            if (in_array($request->role, $allowedRoles, true)) {
+                $query->where('role', $request->role);
+            }
+        }
+
+        if ($request->filled('lab_search')) {
+            $labSearch = $request->lab_search;
+            $query->whereHas('lab', function ($lq) use ($labSearch) {
+                $lq->where('name', 'like', '%'.$labSearch.'%');
+            });
+        }
+
+        $users = $query->paginate(20)->withQueryString();
+
+        return view('super-admin.users.index', compact('users'));
+    }
+
+    /**
+     * Super-admin audit trail (mutations and sensitive reads).
+     */
+    public function activity(Request $request): View
+    {
+        $query = SuperAdminAuditLog::query()
+            ->with('user:id,name,email')
+            ->latest();
+
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function ($q) use ($s) {
+                $q->where('description', 'like', '%'.$s.'%')
+                    ->orWhere('action', 'like', '%'.$s.'%');
+            });
+        }
+
+        $logs = $query->paginate(30)->withQueryString();
+
+        $actionChoices = SuperAdminAuditLog::query()
+            ->select('action')
+            ->distinct()
+            ->orderBy('action')
+            ->pluck('action');
+
+        return view('super-admin.activity.index', compact('logs', 'actionChoices'));
     }
 
     /**
@@ -65,6 +300,8 @@ class SuperAdminController extends Controller
      */
     public function exportLabs(Request $request)
     {
+        SuperAdminAuditLog::record('labs.exported', 'Downloaded platform labs CSV export');
+
         $labs = Lab::withCount(['users', 'domains', 'patients', 'testOrders', 'reports'])
             ->withMax('testOrders', 'created_at')
             ->orderByDesc('created_at')
@@ -212,6 +449,12 @@ class SuperAdminController extends Controller
             'role' => 'admin',
         ]);
 
+        SuperAdminAuditLog::record('lab.created', 'Created lab: '.$lab->name, $lab, [
+            'level' => $lab->level,
+            'initial_domain' => $validated['domain'] ?? null,
+            'default_admin_user_id' => $user->id,
+        ]);
+
         return redirect()->route('super-admin.labs.show', $lab)
             ->with('success', 'Lab created successfully. Default admin user created with email: ' . $validated['email'] . ' and password: password');
     }
@@ -314,6 +557,8 @@ class SuperAdminController extends Controller
             $lab->update(['name' => $validated['brand_name']]);
         }
 
+        SuperAdminAuditLog::record('lab.settings_updated', 'Updated website/branding settings for '.$lab->name, $lab);
+
         return redirect()->back()
             ->with('success', 'Lab settings updated successfully.');
     }
@@ -345,6 +590,8 @@ class SuperAdminController extends Controller
 
         $settings->update($validated);
 
+        SuperAdminAuditLog::record('lab.features_updated', 'Updated feature flags for '.$lab->name, $lab, $validated);
+
         return redirect()->back()
             ->with('success', 'Lab features updated successfully.');
     }
@@ -373,6 +620,8 @@ class SuperAdminController extends Controller
 
         $lab->update($validated);
 
+        SuperAdminAuditLog::record('lab.updated', 'Updated lab profile: '.$lab->name, $lab);
+
         return redirect()->route('super-admin.labs.show', $lab)
             ->with('success', 'Lab updated successfully.');
     }
@@ -383,6 +632,8 @@ class SuperAdminController extends Controller
     public function destroyLab(Lab $lab): RedirectResponse
     {
         $labName = $lab->name;
+        $labId = $lab->id;
+        SuperAdminAuditLog::record('lab.deleted', 'Deleted lab: '.$labName, null, ['lab_id' => $labId, 'name' => $labName]);
         $lab->delete();
 
         return redirect()->route('super-admin.labs.index')
@@ -396,6 +647,8 @@ class SuperAdminController extends Controller
     {
         $lab->update(['status' => 'suspended']);
 
+        SuperAdminAuditLog::record('lab.suspended', 'Suspended lab: '.$lab->name, $lab);
+
         return redirect()->back()
             ->with('success', 'Lab suspended successfully.');
     }
@@ -406,6 +659,8 @@ class SuperAdminController extends Controller
     public function activateLab(Lab $lab): RedirectResponse
     {
         $lab->update(['status' => 'active']);
+
+        SuperAdminAuditLog::record('lab.activated', 'Activated lab: '.$lab->name, $lab);
 
         return redirect()->back()
             ->with('success', 'Lab activated successfully.');
@@ -422,6 +677,8 @@ class SuperAdminController extends Controller
 
         $lab->update($validated);
 
+        SuperAdminAuditLog::record('lab.level_changed', 'Changed lab level to '.$validated['level'].' for '.$lab->name, $lab, ['level' => $validated['level']]);
+
         return redirect()->back()
             ->with('success', 'Lab level updated successfully.');
     }
@@ -436,11 +693,13 @@ class SuperAdminController extends Controller
             'is_active' => 'nullable|boolean',
         ]);
 
-        \App\Models\Domain::create([
+        $domain = Domain::create([
             'lab_id' => $lab->id,
             'domain' => $validated['domain'],
             'is_active' => $validated['is_active'] ?? true,
         ]);
+
+        SuperAdminAuditLog::record('domain.created', 'Added domain '.$domain->domain.' to '.$lab->name, $domain, ['lab_id' => $lab->id]);
 
         return redirect()->back()
             ->with('success', 'Domain added successfully.');
@@ -462,6 +721,8 @@ class SuperAdminController extends Controller
 
         $domain->update($validated);
 
+        SuperAdminAuditLog::record('domain.updated', 'Updated domain '.$domain->domain.' ('.$lab->name.')', $domain, ['lab_id' => $lab->id]);
+
         return redirect()->back()
             ->with('success', 'Domain updated successfully.');
     }
@@ -475,6 +736,8 @@ class SuperAdminController extends Controller
             abort(404);
         }
 
+        $host = $domain->domain;
+        SuperAdminAuditLog::record('domain.deleted', 'Removed domain '.$host.' from '.$lab->name, null, ['lab_id' => $lab->id, 'domain' => $host]);
         $domain->delete();
 
         return redirect()->back()
@@ -493,13 +756,15 @@ class SuperAdminController extends Controller
             'role' => 'required|in:admin,staff',
         ]);
 
-        User::create([
+        $newUser = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => bcrypt($validated['password']),
             'lab_id' => $lab->id,
             'role' => $validated['role'],
         ]);
+
+        SuperAdminAuditLog::record('user.created', 'Created user '.$newUser->email.' for '.$lab->name, $newUser, ['lab_id' => $lab->id, 'role' => $validated['role']]);
 
         return redirect()->back()
             ->with('success', 'User created successfully.');
@@ -533,6 +798,12 @@ class SuperAdminController extends Controller
 
         $user->update($updateData);
 
+        $meta = ['lab_id' => $lab->id];
+        if (! empty($validated['password'])) {
+            $meta['password_changed'] = true;
+        }
+        SuperAdminAuditLog::record('user.updated', 'Updated user '.$user->email.' ('.$lab->name.')', $user, $meta);
+
         return redirect()->back()
             ->with('success', 'User updated successfully.');
     }
@@ -552,6 +823,8 @@ class SuperAdminController extends Controller
                 ->with('error', 'Cannot delete super admin user.');
         }
 
+        $email = $user->email;
+        SuperAdminAuditLog::record('user.deleted', 'Deleted user '.$email.' from '.$lab->name, null, ['lab_id' => $lab->id, 'email' => $email]);
         $user->delete();
 
         return redirect()->back()
@@ -574,6 +847,11 @@ class SuperAdminController extends Controller
 
         $lab->update($validated);
 
+        SuperAdminAuditLog::record('lab.subscription_updated', 'Updated subscription for '.$lab->name, $lab, [
+            'subscription_plan' => $validated['subscription_plan'],
+            'subscription_status' => $validated['subscription_status'],
+        ]);
+
         return redirect()->back()
             ->with('success', 'Subscription information updated successfully.');
     }
@@ -589,13 +867,15 @@ class SuperAdminController extends Controller
             'is_important' => 'nullable|boolean',
         ]);
 
-        \App\Models\LabSupportNote::create([
+        $note = \App\Models\LabSupportNote::create([
             'lab_id' => $lab->id,
             'created_by' => Auth::id(),
             'note' => $validated['note'],
             'type' => $validated['type'],
             'is_important' => $request->has('is_important') && $request->is_important == '1',
         ]);
+
+        SuperAdminAuditLog::record('support_note.created', 'Added '.$validated['type'].' support note for '.$lab->name, $note, ['lab_id' => $lab->id]);
 
         return redirect()->back()
             ->with('success', 'Support note added successfully.');
@@ -610,6 +890,7 @@ class SuperAdminController extends Controller
             abort(404);
         }
 
+        SuperAdminAuditLog::record('support_note.deleted', 'Deleted support note #'.$note->id.' for '.$lab->name, null, ['lab_id' => $lab->id, 'note_id' => $note->id]);
         $note->delete();
 
         return redirect()->back()
@@ -683,6 +964,8 @@ class SuperAdminController extends Controller
                 'note' => 'Patient data, orders, and reports are excluded for privacy reasons. Only counts are included.',
             ],
         ];
+
+        SuperAdminAuditLog::record('lab.data_exported', 'Downloaded JSON export for lab: '.$lab->name, $lab);
 
         return response()->json($data, 200, [
             'Content-Type' => 'application/json',
