@@ -21,6 +21,17 @@ class DetectDomain
             return $next($request);
         }
 
+        // Automated tests: no real domain on Host header — bind a fixed lab from phpunit.xml.
+        if (app()->environment('testing')) {
+            $labId = (int) env('TESTING_TENANT_LAB_ID', 1);
+            if ($labId > 0) {
+                app()->instance('lab_id', $labId);
+                config(['app.lab_id' => $labId]);
+
+                return $next($request);
+            }
+        }
+
         // Public and lab routes always resolve the lab from the request host (even when a
         // super admin is logged in), so currentLabId() and WebsiteSetting work on /, CMS, etc.
 

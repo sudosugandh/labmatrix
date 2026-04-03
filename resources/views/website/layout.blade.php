@@ -7,10 +7,13 @@
         $settings = new \App\Models\WebsiteSetting([
             'primary_color' => '#6366f1',
             'brand_name' => currentLab()?->name ?? 'HealthMatrix',
-            'hero_title' => 'Welcome to ' . (currentLab()?->name ?? 'HealthMatrix'),
-            'hero_subtitle' => 'Your trusted diagnostic center',
+            'hero_title' => 'Accurate Lab Tests. Fast Reports. Trusted Care.',
+            'hero_subtitle' => 'Book your test online and get reliable reports quickly.',
+            'theme_preset' => 'violet',
         ]);
     }
+    $theme = \App\Support\WebsiteTheme::preset('violet');
+    $secondaryResolved = $settings->secondary_color ?: $theme['secondary_default'];
 @endphp
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -32,18 +35,29 @@
     @endif
 
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=outfit:400,500,600,700|sora:600,700&display=swap" rel="stylesheet" />
+    <link href="{{ $theme['fonts_href'] }}" rel="stylesheet" />
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <style>
         :root {
             --primary-color: {{ $settings->primary_color ?? '#6366f1' }};
             --primary-hover: {{ $settings->primary_color ?? '#4f46e5' }};
-            --font-display: 'Sora', ui-sans-serif, system-ui, sans-serif;
-            --font-body: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+            --secondary-color: {{ $secondaryResolved }};
+            --page-bg-start: {{ $theme['page_bg_start'] }};
+            --page-bg-end: {{ $theme['page_bg_end'] }};
+            --font-display: {{ $theme['font_display'] }};
+            --font-body: {{ $theme['font_body'] }};
         }
         html { scroll-behavior: smooth; }
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+        }
         body { font-family: var(--font-body); }
+        @media (max-width: 767px) {
+            html:has(.site-nav-links.open) {
+                overflow: hidden;
+            }
+        }
         .font-display { font-family: var(--font-display); }
         .site-nav-links a:focus-visible,
         .nav-cta:focus-visible,
@@ -98,14 +112,23 @@
             transition: transform 0.2s, box-shadow 0.2s;
         }
         .site-nav-links a.nav-cta-secondary {
-            border: 2px solid var(--primary-color);
-            color: var(--primary-color) !important;
+            border: 2px solid #0f172a;
+            color: #0f172a !important;
             padding: 0.4rem 1.125rem;
             border-radius: 0.625rem;
             font-weight: 600;
+            background-color: #fff;
         }
         .site-nav-links a.nav-cta-secondary:hover {
-            background-color: color-mix(in srgb, var(--primary-color) 8%, transparent);
+            color: #0f172a !important;
+            background-color: #f8fafc;
+        }
+        .site-nav-links a.nav-cta-secondary.active {
+            color: #0f172a !important;
+            background-color: #f1f5f9;
+        }
+        .site-nav-links a.nav-cta-secondary.active:hover {
+            background-color: #e2e8f0;
         }
         @media (max-width: 767px) {
             .site-nav-links {
@@ -148,6 +171,10 @@
             }
             .nav-toggle:hover {
                 background: #f9fafb;
+            }
+            .nav-toggle:focus-visible {
+                outline: 2px solid var(--primary-color);
+                outline-offset: 2px;
             }
         }
         @media (min-width: 768px) {
@@ -194,11 +221,15 @@
             color: #111;
             background: #f3f4f6;
         }
+        .home-visit-modal .close-btn:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
         /* Page load loader – lab-themed */
         .page-loader {
             position: fixed;
             inset: 0;
-            background: linear-gradient(180deg, #fafbff 0%, #f0f4ff 100%);
+            background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 100%);
             z-index: 99999;
             display: flex;
             align-items: center;
@@ -214,9 +245,9 @@
             width: 80px;
             height: 80px;
             border-radius: 50%;
-            border: 4px solid #e8ecf7;
+            border: 4px solid color-mix(in srgb, var(--primary-color) 12%, var(--page-bg-end));
             border-top-color: var(--primary-color);
-            border-right-color: #8b5cf6;
+            border-right-color: var(--secondary-color);
             animation: loader-spin 0.9s linear infinite;
         }
         .page-loader__icons {
@@ -239,6 +270,38 @@
         @keyframes loader-spin { to { transform: rotate(360deg); } }
         @keyframes loader-orbit { to { transform: rotate(-360deg); } }
         @keyframes loader-pulse { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+        .skip-to-main {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+        .skip-to-main:focus {
+            position: fixed;
+            left: 1rem;
+            top: 1rem;
+            width: auto;
+            height: auto;
+            margin: 0;
+            padding: 0.75rem 1rem;
+            clip: auto;
+            overflow: visible;
+            white-space: normal;
+            z-index: 100;
+            background: #fff;
+            color: #0f172a;
+            border-radius: 0.75rem;
+            box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.15);
+            font-weight: 600;
+            font-size: 0.875rem;
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
     </style>
     
     @php
@@ -255,7 +318,8 @@
     @endphp
     @stack('styles')
 </head>
-<body class="font-sans antialiased" x-data="{ navOpen: false }">
+<body class="site-public font-sans antialiased min-h-screen" style="background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 55%, #ffffff 100%);" x-data="{ navOpen: false }">
+    <a href="#main-content" class="skip-to-main" onclick="document.getElementById('main-content')?.focus({preventScroll:true})">Skip to main content</a>
     <!-- Page load loader (lab-themed) -->
     <div id="page-loader" class="page-loader" aria-hidden="true">
         <div class="relative flex flex-col items-center justify-center">
@@ -265,13 +329,13 @@
                     <div class="page-loader__icon page-loader__icon--1" style="color: var(--primary-color);" title="Test tube">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M7 2v2h1v14c0 2.21 1.79 4 4 4s4-1.79 4-4V4h1V2H7zm4 18c-1.1 0-2-.9-2-2V4h4v14c0 1.1-.9 2-2 2z"/></svg>
                     </div>
-                    <div class="page-loader__icon page-loader__icon--2" style="color: #8b5cf6;" title="Microscope">
+                    <div class="page-loader__icon page-loader__icon--2" style="color: var(--secondary-color);" title="Microscope">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M19 8h-1V6h-2v2h-2V6h-2v2H5c-1.1 0-2 .9-2 2v1h2v7c0 1.1.9 2 2 2h2v1h2v-1h2c1.1 0 2-.9 2-2v-7h2v-1c0-1.1-.9-2-2-2zm-4 9H9v-2h6v2z"/></svg>
                     </div>
                     <div class="page-loader__icon page-loader__icon--3" style="color: var(--primary-color);" title="Beaker">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M7 2v2h1v12.27c-1.29.52-2.22 1.76-2.22 3.23 0 1.94 1.58 3.5 3.5 3.5s3.5-1.56 3.5-3.5c0-1.47-.93-2.71-2.22-3.23V4h1V2H7zm2 2h2v10.82c.55.22 1 .58 1.27 1.04.27-.46.72-.82 1.27-1.04V4h2V2H9v2z"/></svg>
                     </div>
-                    <div class="page-loader__icon page-loader__icon--4" style="color: #6366f1;" title="Lab">
+                    <div class="page-loader__icon page-loader__icon--4" style="color: color-mix(in srgb, var(--primary-color) 70%, var(--secondary-color) 30%);" title="Lab">
                         <svg viewBox="0 0 24 24" fill="currentColor" class="w-5 h-5"><path d="M12 2L2 7v2h2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V9h2V7L12 2zm0 2.18l6 3.32v1.5H6v-1.5l6-3.32zM18 19H6V9h12v10z"/></svg>
                     </div>
                 </div>
@@ -281,25 +345,25 @@
         </div>
     </div>
 
-    @if($settings->home_collection_popup_enabled ?? true)
+    @if(($settings->home_collection_popup_enabled ?? true) && ! request()->is('doctor-portal*'))
     <!-- Home visit / home collection popup -->
-    <div x-data="homeVisitPopup({{ (int)($settings->home_collection_popup_delay_seconds ?? 2) }}, '{{ $settings->home_collection_popup_frequency ?? 'session' }}')" x-init="init()" x-show="open" x-cloak x-transition class="home-visit-overlay" @keydown.escape.window="close()">
-        <div class="home-visit-modal" @click.outside="close()">
-            <button type="button" class="close-btn" aria-label="Close" @click="close()">&times;</button>
+    <div x-data="homeVisitPopup({{ (int)($settings->home_collection_popup_delay_seconds ?? 2) }}, '{{ $settings->home_collection_popup_frequency ?? 'session' }}')" x-init="init()" x-show="open" x-cloak x-transition class="home-visit-overlay" @keydown.escape.window="close()" role="presentation">
+        <div class="home-visit-modal" @click.outside="close()" role="dialog" aria-modal="true" aria-labelledby="home-visit-dialog-title">
+            <button type="button" class="close-btn" aria-label="Close dialog" @click="close()">&times;</button>
             <div class="p-6 pt-10 text-center">
-                <div class="mb-4 flex justify-center">
-                    <svg class="w-20 h-20 text-gray-300" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a4 4 0 0 1 4 4v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6a4 4 0 0 1 4-4zm2 6V6a2 2 0 1 0-4 0v2h4z"/></svg>
+                <div class="mb-4 flex justify-center" aria-hidden="true">
+                    <svg class="w-20 h-20 text-gray-300" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1h1a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h1V6a4 4 0 0 1 4-4zm2 6V6a2 2 0 1 0-4 0v2h4z"/></svg>
                 </div>
-                <h2 class="text-xl font-bold text-gray-900 mb-1">Need Help in Booking A Home Collection?</h2>
+                <h2 id="home-visit-dialog-title" class="text-xl font-bold text-gray-900 mb-1">Need Help in Booking A Home Collection?</h2>
                 <p class="text-sm text-gray-600 mb-6">Drop your Details and we will guide you over call</p>
                 <template x-if="!submitted">
                     <form @submit.prevent="submit()" class="text-left space-y-4">
                         <input type="text" name="name" x-model="name" placeholder="Name" required
-                            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            class="w-full min-h-[44px] rounded border border-gray-300 px-3 py-2.5 text-base sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
                         <input type="tel" name="phone" x-model="phone" placeholder="Enter Phone Number" required
-                            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            class="w-full min-h-[44px] rounded border border-gray-300 px-3 py-2.5 text-base sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
                         <select name="city" x-model="city"
-                            class="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+                            class="w-full min-h-[44px] rounded border border-gray-300 px-3 py-2.5 text-base sm:text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/30">
                             <option value="">Select City</option>
                             <option value="Mumbai">Mumbai</option>
                             <option value="Delhi">Delhi</option>
@@ -313,7 +377,7 @@
                         </select>
                         <p x-show="error" x-text="error" class="text-sm text-red-600"></p>
                         <button type="submit" :disabled="loading"
-                            class="w-full rounded py-2.5 text-sm font-medium text-white disabled:opacity-70"
+                            class="w-full min-h-[48px] rounded py-3 text-sm font-semibold text-white disabled:opacity-70"
                             style="background-color: var(--primary-color);">
                             <span x-show="!loading">Request Home Visit</span>
                             <span x-show="loading">Sending...</span>
@@ -349,125 +413,54 @@
         </div>
     @endif
     <!-- Navigation (sticky) -->
-    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-[0_1px_0_0_rgba(0,0,0,0.05)] border-b border-slate-200/60">
+    <nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-md shadow-[0_1px_0_0_rgba(0,0,0,0.05)] border-b border-slate-200/60" aria-label="Main navigation">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <div class="flex items-center shrink-0">
-                    <a href="{{ route('home') }}" class="flex items-center">
+            <div class="flex justify-between items-center min-h-[4rem] py-2 md:py-0 md:h-16 md:min-h-0">
+                <div class="flex items-center shrink-0 min-w-0 pr-2">
+                    <a href="{{ route('home') }}" class="flex items-center rounded-lg">
                         @if($settings->logo)
-                            <img src="{{ Storage::url($settings->logo) }}" alt="Logo" class="h-14 w-auto max-h-14 object-contain">
+                            <img src="{{ Storage::url($settings->logo) }}" alt="{{ currentLab()?->name ?? 'HealthMatrix' }} — Home" class="h-12 md:h-14 w-auto max-h-12 md:max-h-14 object-contain" width="160" height="56" decoding="async">
                         @else
-                            <span class="text-xl font-display font-bold tracking-tight" style="color: var(--primary-color);">{{ currentLab()?->name ?? 'HealthMatrix' }}</span>
+                            <span class="text-lg md:text-xl font-display font-bold tracking-tight truncate max-w-[min(100vw-8rem,20rem)]" style="color: var(--primary-color);">{{ currentLab()?->name ?? 'HealthMatrix' }}</span>
                         @endif
                     </a>
                 </div>
-                <button type="button" class="nav-toggle" @click="navOpen = !navOpen" aria-label="Toggle menu">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!navOpen"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="navOpen" x-cloak><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                <button type="button" class="nav-toggle min-h-[44px] min-w-[44px] shrink-0" @click="navOpen = !navOpen" :aria-expanded="navOpen ? 'true' : 'false'" aria-controls="primary-navigation" :aria-label="navOpen ? 'Close menu' : 'Open menu'">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="!navOpen" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" x-show="navOpen" x-cloak aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
-                <div class="site-nav-links" :class="{ 'open': navOpen }" @click="navOpen = false">
-                    @foreach($menuItems as $item)
-                        @php
-                            $itemPath = '/' . trim(parse_url($item->url, PHP_URL_PATH) ?? $item->url, '/');
-                            $itemUrl = $item->url ?? '';
-                            $isActive = $currentPath === $itemPath || ($itemPath === '/' && $currentPath === '');
-                            $isBookCta = str_contains($itemUrl, 'book-appointment') || (str_contains($itemUrl, 'appointments') && !str_contains($itemUrl, 'my-appointments')) || str_contains(strtolower($item->title ?? ''), 'book');
-                            $isReportsCta = str_contains($itemUrl, 'patient-reports') || (str_contains($itemUrl, 'reports') && !str_contains($itemUrl, 'appointments')) || str_contains(strtolower($item->title ?? ''), 'report');
-                        @endphp
-                        <a href="{{ $item->url }}" class="{{ $isActive ? 'active' : '' }} {{ $isBookCta ? 'nav-cta' : '' }} {{ $isReportsCta && !$isBookCta ? 'nav-cta-secondary' : '' }}">{{ $item->title }}</a>
-                    @endforeach
+                <div id="primary-navigation" class="site-nav-links" :class="{ 'open': navOpen }" @click="navOpen = false">
+                    @auth('doctor')
+                        @include('website.partials.nav-doctor-portal')
+                    @else
+                        @foreach($menuItems as $item)
+                            @php
+                                $itemPath = '/' . trim(parse_url($item->url, PHP_URL_PATH) ?? $item->url, '/');
+                                $itemUrl = $item->url ?? '';
+                                $isActive = $currentPath === $itemPath || ($itemPath === '/' && $currentPath === '');
+                                $isBookCta = str_contains($itemUrl, 'book-appointment') || (str_contains($itemUrl, 'appointments') && !str_contains($itemUrl, 'my-appointments')) || str_contains(strtolower($item->title ?? ''), 'book');
+                                $isReportsCta = str_contains($itemUrl, 'patient-reports') || (str_contains($itemUrl, 'reports') && !str_contains($itemUrl, 'appointments')) || str_contains(strtolower($item->title ?? ''), 'report');
+                            @endphp
+                            <a href="{{ $item->url }}" class="{{ $isActive ? 'active' : '' }} {{ $isBookCta ? 'nav-cta' : '' }} {{ $isReportsCta && !$isBookCta ? 'nav-cta-secondary' : '' }}">{{ $item->title }}</a>
+                        @endforeach
+                    @endauth
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Main Content -->
-    <main>
+    <main id="main-content" class="pb-24 max-md:pb-28 md:pb-10" tabindex="-1">
         @yield('content')
     </main>
 
-    @php
-        $footerMenu = \App\Models\Menu::where('lab_id', currentLabId())->where('name', 'Footer Menu')->first();
-        $footerMenuItems = $footerMenu ? $footerMenu->items : collect();
-    @endphp
-    <!-- Footer -->
-    <footer class="bg-slate-900 text-white mt-20">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                <div>
-                    <h3 class="text-lg font-display font-semibold mb-4 tracking-tight">{{ currentLab()?->name ?? 'HealthMatrix' }}</h3>
-                    @if($settings->address)
-                        <p class="text-slate-400 leading-relaxed">{{ $settings->address }}</p>
-                    @endif
-                </div>
-                <div>
-                    <h3 class="text-lg font-display font-semibold mb-4 tracking-tight">Contact</h3>
-                    @if($settings->phone)
-                        <p class="text-slate-400">Phone: {{ $settings->phone }}</p>
-                    @endif
-                    @if($settings->email)
-                        <p class="text-slate-400">Email: {{ $settings->email }}</p>
-                    @endif
-                </div>
-                @if($footerMenuItems->isNotEmpty())
-                    <div>
-                        <h3 class="text-lg font-display font-semibold mb-4 tracking-tight">Quick Links</h3>
-                        <ul class="space-y-3">
-                            @foreach($footerMenuItems as $item)
-                                <li><a href="{{ $item->url }}" class="text-slate-400 hover:text-white transition-colors inline-block">{{ $item->title }}</a></li>
-                            @endforeach
-                        </ul>
-                    </div>
-                @endif
-                <div>
-                    @if($settings->footer_text)
-                        <p class="text-slate-400 leading-relaxed">{{ $settings->footer_text }}</p>
-                    @endif
-                    @if(!empty($settings->footer_content))
-                        <div class="footer-cms mt-2 text-slate-400 prose prose-invert prose-sm max-w-none">
-                            {!! $settings->footer_content !!}
-                        </div>
-                    @endif
-                </div>
-            </div>
-            @php
-                $hasSocial = !empty($settings->facebook_url) || !empty($settings->twitter_url) || !empty($settings->instagram_url) || !empty($settings->linkedin_url) || !empty($settings->youtube_url);
-            @endphp
-            @if($hasSocial)
-            <div class="mt-10 pt-8 border-t border-slate-700/80 flex flex-wrap items-center justify-center gap-5">
-                <span class="text-slate-500 text-sm font-medium">Follow us</span>
-                @if(!empty($settings->facebook_url))
-                    <a href="{{ $settings->facebook_url }}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800" aria-label="Facebook">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                    </a>
-                @endif
-                @if(!empty($settings->twitter_url))
-                    <a href="{{ $settings->twitter_url }}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800" aria-label="X (Twitter)">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                    </a>
-                @endif
-                @if(!empty($settings->instagram_url))
-                    <a href="{{ $settings->instagram_url }}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800" aria-label="Instagram">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                    </a>
-                @endif
-                @if(!empty($settings->linkedin_url))
-                    <a href="{{ $settings->linkedin_url }}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800" aria-label="LinkedIn">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
-                    </a>
-                @endif
-                @if(!empty($settings->youtube_url))
-                    <a href="{{ $settings->youtube_url }}" target="_blank" rel="noopener noreferrer" class="text-slate-500 hover:text-white transition-colors p-2 rounded-lg hover:bg-slate-800" aria-label="YouTube">
-                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                    </a>
-                @endif
-            </div>
-            @endif
-            <div class="mt-10 pt-8 border-t border-slate-700/80 text-center text-slate-500 text-sm">
-                <p>&copy; {{ date('Y') }} {{ currentLab()?->name ?? 'HealthMatrix' }}. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+    @unless(Auth::guard('doctor')->check() && request()->is('doctor-portal*'))
+        @include('website.partials.sticky-contact-fab')
+    @endunless
+
+    <div class="mt-20">
+        @include('website.partials.site-footer', ['settings' => $settings])
+    </div>
 
     <script>
         (function() {

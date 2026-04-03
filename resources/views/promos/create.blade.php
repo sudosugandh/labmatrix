@@ -19,8 +19,14 @@
             <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <x-form-input label="Link URL (optional)" name="link" type="text" placeholder="/packages or https://..." value="{{ old('link') }}" />
                 <div>
+                    <label for="valid_from" class="block text-sm font-medium text-gray-700 mb-2">Valid from (optional)</label>
+                    <input type="date" name="valid_from" id="valid_from" value="{{ old('valid_from') }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">Offer is hidden on the site before this date.</p>
+                </div>
+                <div>
                     <label for="valid_until" class="block text-sm font-medium text-gray-700 mb-2">Valid until (optional)</label>
                     <input type="date" name="valid_until" id="valid_until" value="{{ old('valid_until') }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                    <p class="mt-1 text-xs text-gray-500">After this date the offer drops off the homepage automatically.</p>
                 </div>
             </div>
             <div class="mt-6 flex items-center gap-6">

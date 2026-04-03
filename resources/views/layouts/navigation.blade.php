@@ -16,10 +16,10 @@
                 <!-- Settings Dropdown -->
                 <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
-                        <button class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200">
+                        <button type="button" class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-200" style="--tw-ring-color: color-mix(in srgb, var(--admin-primary, #6366f1) 55%, transparent);">
                             <div class="flex items-center">
-                                <div class="bg-indigo-100 rounded-full p-1.5 mr-2">
-                                    <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <div class="rounded-full p-1.5 mr-2" style="background: color-mix(in srgb, var(--admin-primary, #6366f1) 18%, white);">
+                                    <svg class="w-4 h-4" style="color: var(--admin-primary, #6366f1);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                     </svg>
                                 </div>

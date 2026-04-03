@@ -36,7 +36,7 @@ class TestController extends Controller
             $query->where('price', '<=', $request->price_max);
         }
         
-        $tests = $query->latest()->paginate(15)->withQueryString();
+        $tests = $query->withCount('parameters')->latest()->paginate(15)->withQueryString();
         
         // Statistics
         $stats = [
@@ -146,8 +146,6 @@ class TestController extends Controller
         if ($test->lab_id !== currentLabId()) {
             abort(404);
         }
-
-        $test->delete();
 
         $test->delete();
 

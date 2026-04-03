@@ -7,13 +7,10 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\Lab;
 use App\Services\InventoryService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class InventoryItemTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected $user;
     protected $lab;
     protected $inventoryService;

@@ -19,6 +19,7 @@ class CmsSeeder extends Seeder
         $labs = Lab::all();
         if ($labs->isEmpty()) {
             $this->command->warn('No labs found. Run LabSeeder first.');
+
             return;
         }
 
@@ -39,7 +40,7 @@ class CmsSeeder extends Seeder
             ['lab_id' => $labId],
             ['brand_name' => $labName]
         );
-        $defaultContentAfterBanner = '<p>' . e($labName) . ' is committed to providing accurate and timely diagnostic services to help you maintain your health and well-being.</p>
+        $defaultContentAfterBanner = '<p>'.e($labName).' is committed to providing accurate and timely diagnostic services to help you maintain your health and well-being.</p>
 <p>We offer a wide range of tests and health packages. Book an appointment online or visit us to learn more.</p>';
         if (empty($settings->content_after_banner)) {
             $settings->update(['content_after_banner' => $defaultContentAfterBanner]);
@@ -74,31 +75,29 @@ class CmsSeeder extends Seeder
         $this->command->info("  [{$labName}] Main menu and navigation items seeded.");
 
         // About Us page (TinyMCE content – editable in admin)
-        $aboutContent = '<p>' . e($labName) . ' is committed to providing accurate and timely diagnostic services to help you maintain your health and well-being.</p>
-<p>Our team uses modern equipment and follows strict quality standards to deliver reliable results. We offer a range of tests and health packages to suit your needs.</p>
-<p>Visit our <a href="/packages">Packages</a> page for offers, or <a href="/book-appointment">book an appointment</a> online.</p>';
+        $aboutContent = '<p><em>The public <strong>About</strong> page uses the structured layout under Settings → CMS → About page (intro, why choose us, stats, team, hours, CTA). This editor content is optional and is <strong>not shown</strong> on the live About page.</em></p>
+<p>'.e($labName).' — for internal notes or future use only.</p>';
         Page::updateOrCreate(
             ['lab_id' => $labId, 'slug' => 'about'],
             [
                 'title' => 'About Us',
                 'content' => $aboutContent,
-                'meta_title' => 'About Us - ' . $labName,
-                'meta_description' => $labName . ' - Your trusted diagnostic center.',
+                'meta_title' => 'About Us - '.$labName,
+                'meta_description' => 'Modern diagnostics, strict quality standards, and reports you can rely on — '.$labName.'.',
                 'status' => 'published',
             ]
         );
         $this->command->info("  [{$labName}] About Us page seeded.");
 
         // Contact Us page (TinyMCE; phone/email/address shown below from Settings → Contact)
-        $contactContent = '<p>Get in touch with us for appointments, reports, or any queries. Our contact details are listed below.</p>
-<p>You can <a href="/book-appointment">book an appointment online</a> or check <a href="/patient-reports">your reports</a> here.</p>';
+        $contactContent = '<p><em>The public <strong>Contact</strong> page is a dedicated layout (actions, form, map, hours). This editor text is <strong>not shown</strong> on the live site.</em></p>';
         Page::updateOrCreate(
             ['lab_id' => $labId, 'slug' => 'contact'],
             [
                 'title' => 'Contact Us',
                 'content' => $contactContent,
-                'meta_title' => 'Contact Us - ' . $labName,
-                'meta_description' => 'Contact ' . $labName . ' for appointments and enquiries.',
+                'meta_title' => 'Contact Us - '.$labName,
+                'meta_description' => 'Call, email, or visit '.$labName.' — book tests online and download reports anytime.',
                 'status' => 'published',
             ]
         );

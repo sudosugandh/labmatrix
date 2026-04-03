@@ -15,7 +15,7 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        if (!User::where('email', 'test@example.com')->exists()) {
+        if (! User::where('email', 'test@example.com')->exists()) {
             User::factory()->create([
                 'name' => 'Test User',
                 'email' => 'test@example.com',
@@ -26,6 +26,10 @@ class DatabaseSeeder extends Seeder
             LabSeeder::class,
             CmsSeeder::class,
             LabDataSeeder::class,
+            B2BPortalExampleSeeder::class,
         ]);
+
+        // Homepage vendor demo (trust strip, CTAs, spotlight, dated promos):
+        // php artisan db:seed --class=VendorLandingDemoSeeder
     }
 }

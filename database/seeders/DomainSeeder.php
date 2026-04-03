@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use App\Models\Lab;
 use App\Models\Domain;
+use App\Models\Lab;
 use Illuminate\Database\Seeder;
 
 class DomainSeeder extends Seeder
@@ -17,9 +17,9 @@ class DomainSeeder extends Seeder
         $localhostLab = Lab::firstOrCreate(
             ['name' => 'HealthMatrix Test Lab'],
             [
-                'email' => 'test@healthmatrix.local',
-                'phone' => '+1234567890',
-                'address' => '123 Test Street, Test City, TC 12345',
+                'email' => 'care@healthmatrix.local',
+                'phone' => '+91 98765 43210',
+                'address' => '42, Ring Road, Rajouri Garden, New Delhi 110027, India',
                 'level' => 'large',
             ]
         );
@@ -28,8 +28,8 @@ class DomainSeeder extends Seeder
             ['name' => 'Apollo Diagnostic Center'],
             [
                 'email' => 'info@appolo.local.com',
-                'phone' => '+1234567890',
-                'address' => 'Apollo Address',
+                'phone' => '+91 11 4123 4567',
+                'address' => 'Plot 12, Sector 18, Noida, Uttar Pradesh 201301, India',
                 'level' => 'large',
             ]
         );

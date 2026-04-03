@@ -24,6 +24,303 @@
         </a>
     </div>
 
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-slate-50/50">
+            <h3 class="text-lg font-semibold text-slate-900">Homepage hero</h3>
+            <p class="text-sm text-slate-500">Text over the banner. Banner carousel is configured below (Homepage Banner).</p>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label for="hero_title" class="block text-sm font-medium text-slate-700 mb-2">Title</label>
+                <input type="text" name="hero_title" id="hero_title" value="{{ old('hero_title', $settings->hero_title ?? '') }}" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5">
+            </div>
+            <div>
+                <label for="hero_subtitle" class="block text-sm font-medium text-slate-700 mb-2">Subtitle</label>
+                <textarea name="hero_subtitle" id="hero_subtitle" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5">{{ old('hero_subtitle', $settings->hero_subtitle ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="hero_image" class="block text-sm font-medium text-slate-700 mb-2">Hero image (optional fallback)</label>
+                <input type="file" name="hero_image" id="hero_image" accept="image/*" class="block w-full text-sm text-slate-600">
+                @if($settings->hero_image)
+                    <p class="mt-2 text-xs text-slate-500">Current: <a href="{{ asset('storage/' . $settings->hero_image) }}" class="text-violet-600 hover:underline" target="_blank">view</a></p>
+                @endif
+            </div>
+            <div>
+                <label for="footer_text" class="block text-sm font-medium text-slate-700 mb-2">Footer line (plain text)</label>
+                <textarea name="footer_text" id="footer_text" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5" placeholder="Short tagline or copyright">{{ old('footer_text', $settings->footer_text ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="footer_tagline" class="block text-sm font-medium text-slate-700 mb-2">Footer brand tagline</label>
+                <textarea name="footer_tagline" id="footer_tagline" rows="2" maxlength="500" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5" placeholder="Shown under the logo in the footer (falls back to hero subtitle if empty)">{{ old('footer_tagline', $settings->footer_tagline ?? '') }}</textarea>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-violet-50/40 p-5 space-y-4">
+                <h4 class="text-sm font-semibold text-slate-900">Pre-footer CTA (above site footer)</h4>
+                <p class="text-xs text-slate-600">Conversion strip with Book + Call. Uses contact phone from branding for “Call now”.</p>
+                <div class="flex flex-wrap items-center gap-3">
+                    <input type="hidden" name="pre_footer_cta_enabled" value="0">
+                    <input type="checkbox" name="pre_footer_cta_enabled" id="pre_footer_cta_enabled" value="1" {{ old('pre_footer_cta_enabled', ($settings->pre_footer_cta_enabled ?? true) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600 focus:ring-violet-500/30">
+                    <label for="pre_footer_cta_enabled" class="text-sm font-medium text-slate-700 cursor-pointer">Show pre-footer section</label>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="pre_footer_heading" class="block text-xs font-medium text-slate-600 mb-1">Heading</label>
+                        <input type="text" name="pre_footer_heading" id="pre_footer_heading" value="{{ old('pre_footer_heading', $settings->pre_footer_heading ?? '') }}" placeholder="Ready to book your test?" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label for="pre_footer_subtitle" class="block text-xs font-medium text-slate-600 mb-1">Subtitle</label>
+                        <input type="text" name="pre_footer_subtitle" id="pre_footer_subtitle" value="{{ old('pre_footer_subtitle', $settings->pre_footer_subtitle ?? '') }}" placeholder="Book online or call us…" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                </div>
+                <div class="pt-2 border-t border-slate-200/80">
+                    <p class="text-xs font-semibold text-slate-800 mb-2">Footer trust badges</p>
+                    <p class="text-xs text-slate-500 mb-3">Turn off any badge that does not apply to your lab.</p>
+                    <div class="flex flex-wrap items-center gap-3">
+                        <input type="hidden" name="footer_show_trust_badges" value="0">
+                        <input type="checkbox" name="footer_show_trust_badges" id="footer_show_trust_badges" value="1" {{ old('footer_show_trust_badges', ($settings->footer_show_trust_badges ?? true) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600 focus:ring-violet-500/30">
+                        <label for="footer_show_trust_badges" class="text-sm text-slate-700 cursor-pointer">Show trust row</label>
+                    </div>
+                    <div class="flex flex-wrap gap-4 mt-3">
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input type="hidden" name="footer_trust_nabl" value="0">
+                            <input type="checkbox" name="footer_trust_nabl" value="1" {{ old('footer_trust_nabl', ($settings->footer_trust_nabl ?? true) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600"> NABL Certified
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input type="hidden" name="footer_trust_iso" value="0">
+                            <input type="checkbox" name="footer_trust_iso" value="1" {{ old('footer_trust_iso', ($settings->footer_trust_iso ?? true) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600"> ISO Certified
+                        </label>
+                        <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                            <input type="hidden" name="footer_trust_patients" value="0">
+                            <input type="checkbox" name="footer_trust_patients" value="1" {{ old('footer_trust_patients', ($settings->footer_trust_patients ?? true) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600"> Trusted by patients
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-4 border-t border-slate-100">
+                <h4 class="text-sm font-semibold text-slate-900 mb-3">Hero buttons</h4>
+                <p class="text-xs text-slate-500 mb-4">Leave URL empty to use defaults: primary → book appointment, secondary → patient reports. Add a third for WhatsApp or call.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Primary label</label>
+                        <input type="text" name="hero_cta_primary_label" value="{{ old('hero_cta_primary_label', $settings->hero_cta_primary_label ?? '') }}" placeholder="Book Appointment" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Primary URL</label>
+                        <input type="text" name="hero_cta_primary_url" value="{{ old('hero_cta_primary_url', $settings->hero_cta_primary_url ?? '') }}" placeholder="/book-appointment or https://..." class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Secondary label</label>
+                        <input type="text" name="hero_cta_secondary_label" value="{{ old('hero_cta_secondary_label', $settings->hero_cta_secondary_label ?? '') }}" placeholder="View Reports" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Secondary URL</label>
+                        <input type="text" name="hero_cta_secondary_url" value="{{ old('hero_cta_secondary_url', $settings->hero_cta_secondary_url ?? '') }}" placeholder="/patient-reports" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Third button label (optional)</label>
+                        <input type="text" name="hero_cta_tertiary_label" value="{{ old('hero_cta_tertiary_label', $settings->hero_cta_tertiary_label ?? '') }}" placeholder="WhatsApp us" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Third button URL</label>
+                        <input type="text" name="hero_cta_tertiary_url" value="{{ old('hero_cta_tertiary_url', $settings->hero_cta_tertiary_url ?? '') }}" placeholder="https://wa.me/..." class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Trust strip --}}
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-emerald-50/80 to-white">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-slate-900">Trust strip</h3>
+                    <p class="text-sm text-slate-500">Accreditations and trust badges (NABL, ISO, years in business, home collection). Shown below the hero.</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="hidden" name="trust_strip_enabled" value="0">
+                    <input type="checkbox" name="trust_strip_enabled" id="trust_strip_enabled" value="1" {{ old('trust_strip_enabled', $settings->trust_strip_enabled ?? false) ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600 focus:ring-violet-500/30">
+                    <label for="trust_strip_enabled" class="text-sm font-medium text-slate-700 cursor-pointer">Show on site</label>
+                </div>
+            </div>
+        </div>
+        <div class="p-6 space-y-4">
+            @php
+                $trustFormRows = old('trust_strip');
+                if (! is_array($trustFormRows)) {
+                    $stored = $settings->trust_strip_items ?? [];
+                    $trustFormRows = [];
+                    for ($ti = 0; $ti < 6; $ti++) {
+                        $trustFormRows[$ti] = [
+                            'label' => $stored[$ti]['label'] ?? '',
+                            'url' => $stored[$ti]['url'] ?? '',
+                            'image_keep' => $stored[$ti]['image'] ?? '',
+                        ];
+                    }
+                } else {
+                    $trustFormRows = array_values($trustFormRows);
+                    while (count($trustFormRows) < 6) {
+                        $trustFormRows[] = ['label' => '', 'url' => '', 'image_keep' => ''];
+                    }
+                }
+            @endphp
+            @foreach($trustFormRows as $ti => $trow)
+                <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50 grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Label</label>
+                        <input type="text" name="trust_strip[{{ $ti }}][label]" value="{{ $trow['label'] ?? '' }}" placeholder="e.g. NABL Accredited" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Link (optional)</label>
+                        <input type="text" name="trust_strip[{{ $ti }}][url]" value="{{ $trow['url'] ?? '' }}" placeholder="https://..." class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div class="md:col-span-4">
+                        <label class="block text-xs font-medium text-slate-600 mb-1">Logo (optional)</label>
+                        <input type="hidden" name="trust_strip[{{ $ti }}][image_keep]" value="{{ $trow['image_keep'] ?? '' }}">
+                        <input type="file" name="trust_strip[{{ $ti }}][image]" accept="image/*" class="block w-full text-xs text-slate-600">
+                        @if(!empty($trow['image_keep']))
+                            <p class="mt-1 text-xs text-slate-500">Current: <a href="{{ asset('storage/' . $trow['image_keep']) }}" class="text-violet-600 hover:underline" target="_blank">view</a></p>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+            <p class="text-xs text-slate-400">Up to 6 items with labels; only rows with a label are saved.</p>
+        </div>
+    </div>
+
+    {{-- Doctor / centre spotlight --}}
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-violet-50/50 to-white flex flex-wrap items-start justify-between gap-4">
+            <div>
+                <h3 class="text-lg font-semibold text-slate-900">Doctor / centre spotlight</h3>
+                <p class="text-sm text-slate-500">Shown on the homepage and the structured About page.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <input type="hidden" name="spotlight_enabled" value="0">
+                <input type="checkbox" name="spotlight_enabled" id="spotlight_enabled" value="1" {{ old('spotlight_enabled', $settings->spotlight_enabled ?? false) ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600 focus:ring-violet-500/30">
+                <label for="spotlight_enabled" class="text-sm font-medium text-slate-700 cursor-pointer">Show on site</label>
+            </div>
+        </div>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Name</label>
+                    <input type="text" name="spotlight_name" value="{{ old('spotlight_name', $settings->spotlight_name ?? '') }}" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Qualifications / title</label>
+                    <input type="text" name="spotlight_credentials" value="{{ old('spotlight_credentials', $settings->spotlight_credentials ?? '') }}" placeholder="MD Pathology, 15+ years" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">One-line message</label>
+                    <input type="text" name="spotlight_tagline" value="{{ old('spotlight_tagline', $settings->spotlight_tagline ?? '') }}" placeholder="Committed to accurate, timely reports." class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Years / experience (About page)</label>
+                    <input type="text" name="spotlight_experience" value="{{ old('spotlight_experience', $settings->spotlight_experience ?? '') }}" placeholder="e.g. 15+ years in clinical pathology" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5">
+                </div>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 mb-2">Photo</label>
+                <input type="file" name="spotlight_image" accept="image/*" class="block w-full text-sm text-slate-600">
+                @if($settings->spotlight_image)
+                    <div class="mt-3 flex items-center gap-3">
+                        <img src="{{ asset('storage/' . $settings->spotlight_image) }}" alt="" class="h-24 w-24 rounded-2xl object-cover border border-slate-200">
+                        <div>
+                            <input type="hidden" name="spotlight_remove_image" value="0">
+                            <label class="inline-flex items-center gap-2 text-sm text-slate-600 cursor-pointer">
+                                <input type="checkbox" name="spotlight_remove_image" value="1" class="rounded border-slate-300 text-red-600">
+                                Remove photo
+                            </label>
+                        </div>
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+
+    {{-- About page (conversion & trust — public /about only) --}}
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-teal-50/60 to-white">
+            <h3 class="text-lg font-semibold text-slate-900">About page</h3>
+            <p class="text-sm text-slate-500 mt-1">Structured trust &amp; conversion sections for <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">/about</code>. Does not repeat homepage banner, trust strip, or offers.</p>
+        </div>
+        <div class="p-6 space-y-8">
+            <div>
+                <label for="about_intro" class="block text-sm font-medium text-slate-700 mb-2">Section 1 — Introduction (optional HTML)</label>
+                <textarea name="about_intro" id="about_intro" rows="5" class="tinymce-editor block w-full rounded-xl border-slate-200 shadow-sm text-sm">{{ old('about_intro', $settings->about_intro ?? '') }}</textarea>
+                <p class="mt-1 text-xs text-slate-500">Leave empty to use a strong default intro focused on accuracy and equipment.</p>
+            </div>
+            <div>
+                <h4 class="text-sm font-semibold text-slate-900 mb-3">Section 2 — Why choose us (up to 6 cards)</h4>
+                <p class="text-xs text-slate-500 mb-4">Rows with a title are saved; empty rows are ignored. Defaults apply if none saved.</p>
+                @php
+                    $whyRows = old('about_why');
+                    if (! is_array($whyRows)) {
+                        $stored = $settings->about_why_cards ?? [];
+                        $whyRows = [];
+                        for ($wi = 0; $wi < 6; $wi++) {
+                            $whyRows[$wi] = [
+                                'title' => $stored[$wi]['title'] ?? '',
+                                'body' => $stored[$wi]['body'] ?? '',
+                            ];
+                        }
+                    } else {
+                        $whyRows = array_values($whyRows);
+                        while (count($whyRows) < 6) {
+                            $whyRows[] = ['title' => '', 'body' => ''];
+                        }
+                    }
+                @endphp
+                @foreach($whyRows as $wi => $wrow)
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-3 mb-3 p-3 rounded-xl bg-slate-50/80 border border-slate-100">
+                        <div class="md:col-span-4">
+                            <label class="block text-xs text-slate-600 mb-1">Title</label>
+                            <input type="text" name="about_why[{{ $wi }}][title]" value="{{ $wrow['title'] ?? '' }}" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                        </div>
+                        <div class="md:col-span-8">
+                            <label class="block text-xs text-slate-600 mb-1">Short description</label>
+                            <input type="text" name="about_why[{{ $wi }}][body]" value="{{ $wrow['body'] ?? '' }}" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Stat — tests</label>
+                    <input type="text" name="about_stat_tests" value="{{ old('about_stat_tests', $settings->about_stat_tests ?? '') }}" placeholder="e.g. 50,000+" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Stat — patients</label>
+                    <input type="text" name="about_stat_patients" value="{{ old('about_stat_patients', $settings->about_stat_patients ?? '') }}" placeholder="e.g. 12,000+" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5 text-sm">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-700 mb-2">Stat — years</label>
+                    <input type="text" name="about_stat_years" value="{{ old('about_stat_years', $settings->about_stat_years ?? '') }}" placeholder="e.g. 15+" class="block w-full rounded-xl border-slate-200 shadow-sm py-2.5 text-sm">
+                </div>
+            </div>
+            <div>
+                <label for="about_working_hours" class="block text-sm font-medium text-slate-700 mb-2">Working hours (About page)</label>
+                <textarea name="about_working_hours" id="about_working_hours" rows="4" class="block w-full rounded-xl border-slate-200 shadow-sm text-sm py-2.5" placeholder="Mon–Sat: 7:00 AM – 8:00 PM&#10;Sunday: Emergency only">{{ old('about_working_hours', $settings->about_working_hours ?? '') }}</textarea>
+            </div>
+            <div>
+                <label for="about_team_trust_line" class="block text-sm font-medium text-slate-700 mb-2">Team — extra trust line (About page)</label>
+                <textarea name="about_team_trust_line" id="about_team_trust_line" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm text-sm py-2.5" placeholder="Short credibility statement under the spotlight bio">{{ old('about_team_trust_line', $settings->about_team_trust_line ?? '') }}</textarea>
+            </div>
+        </div>
+    </div>
+
+    {{-- Contact page (/contact) --}}
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-r from-sky-50/60 to-white">
+            <h3 class="text-lg font-semibold text-slate-900">Contact page</h3>
+            <p class="text-sm text-slate-500 mt-1">Working hours for <code class="text-xs bg-slate-100 px-1.5 py-0.5 rounded">/contact</code>. If empty, the About page hours are used. Form submissions are saved and emailed to <strong>Contact email</strong> (or main email) under Settings → Branding.</p>
+        </div>
+        <div class="p-6">
+            <label for="contact_working_hours" class="block text-sm font-medium text-slate-700 mb-2">Working hours (Contact page)</label>
+            <textarea name="contact_working_hours" id="contact_working_hours" rows="4" class="block w-full rounded-xl border-slate-200 shadow-sm text-sm py-2.5" placeholder="Mon–Sat: 7:00 AM – 8:00 PM&#10;Sunday: Closed">{{ old('contact_working_hours', $settings->contact_working_hours ?? '') }}</textarea>
+        </div>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {{-- Header content --}}
         <div class="group relative bg-white rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 overflow-hidden">
@@ -254,14 +551,43 @@
             {{-- Offers --}}
             <div class="pt-6 border-t border-slate-200">
                 <p class="text-sm text-slate-600 mb-4">Manage content in <a href="{{ route('promos.index') }}" class="text-violet-600 hover:text-violet-700 font-medium">Offers</a>.</p>
-                <div class="flex items-center justify-between p-4 rounded-xl bg-slate-50/80 mb-4">
-                    <label for="show_promos_section" class="text-sm font-medium text-slate-700 cursor-pointer">Show "Offers" section</label>
-                    <input type="hidden" name="show_promos_section" value="0">
-                    <input type="checkbox" name="show_promos_section" id="show_promos_section" value="1" {{ old('show_promos_section', $settings->show_promos_section ?? true) ? 'checked' : '' }} class="w-11 h-6 rounded-full border-slate-200 text-violet-600 focus:ring-violet-500/30 cursor-pointer">
+                <div class="p-4 rounded-xl bg-slate-50/80 mb-4 space-y-2">
+                    <div class="flex items-center justify-between gap-4">
+                        <label for="show_promos_section" class="text-sm font-medium text-slate-700 cursor-pointer">Show full-width offers grid (homepage)</label>
+                        <input type="hidden" name="show_promos_section" value="0">
+                        <input type="checkbox" name="show_promos_section" id="show_promos_section" value="1" {{ old('show_promos_section', $settings->show_promos_section ?? true) ? 'checked' : '' }} class="w-11 h-6 rounded-full border-slate-200 text-violet-600 focus:ring-violet-500/30 cursor-pointer shrink-0">
+                    </div>
+                    <p class="text-xs text-slate-500">When the popular packages strip below is on, the grid stays off so offers are not shown twice.</p>
                 </div>
-                <div>
-                    <label for="promos_heading" class="block text-sm font-medium text-slate-700 mb-2">Heading</label>
-                    <input type="text" name="promos_heading" id="promos_heading" value="{{ old('promos_heading', $settings->promos_heading ?? 'Special Offers') }}" placeholder="Special Offers" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 py-2.5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="promos_heading" class="block text-sm font-medium text-slate-700 mb-2">Main offers section — heading</label>
+                        <input type="text" name="promos_heading" id="promos_heading" value="{{ old('promos_heading', $settings->promos_heading ?? 'Special Offers') }}" placeholder="Special Offers" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 py-2.5">
+                    </div>
+                    <div>
+                        <label for="promos_subtitle" class="block text-sm font-medium text-slate-700 mb-2">Main offers section — subtitle</label>
+                        <input type="text" name="promos_subtitle" id="promos_subtitle" value="{{ old('promos_subtitle', $settings->promos_subtitle ?? '') }}" placeholder="Save on health checkups..." class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 py-2.5">
+                    </div>
+                </div>
+                <div class="mt-6 p-4 rounded-xl bg-amber-50/60 border border-amber-100/80 space-y-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label for="promos_today_strip_enabled" class="text-sm font-semibold text-slate-900 cursor-pointer">Popular packages strip</label>
+                            <p class="text-xs text-slate-600 mt-0.5">Horizontal row after “How it works”, using active <a href="{{ route('promos.index') }}" class="text-violet-600 font-medium hover:underline">offers</a> in their valid date range.</p>
+                        </div>
+                        <input type="hidden" name="promos_today_strip_enabled" value="0">
+                        <input type="checkbox" name="promos_today_strip_enabled" id="promos_today_strip_enabled" value="1" {{ old('promos_today_strip_enabled', $settings->promos_today_strip_enabled ?? false) ? 'checked' : '' }} class="w-11 h-6 rounded-full border-slate-200 text-violet-600 focus:ring-violet-500/30 cursor-pointer">
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="promos_today_heading" class="block text-xs font-medium text-slate-600 mb-1">Strip heading</label>
+                            <input type="text" name="promos_today_heading" id="promos_today_heading" value="{{ old('promos_today_heading', $settings->promos_today_heading ?? '') }}" placeholder="Popular health packages" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                        </div>
+                        <div>
+                            <label for="promos_today_subtitle" class="block text-xs font-medium text-slate-600 mb-1">Strip subtitle</label>
+                            <input type="text" name="promos_today_subtitle" id="promos_today_subtitle" value="{{ old('promos_today_subtitle', $settings->promos_today_subtitle ?? '') }}" placeholder="Limited-time pricing" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

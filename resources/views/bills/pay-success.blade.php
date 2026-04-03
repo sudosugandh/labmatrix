@@ -111,7 +111,7 @@
                             View appointment confirmation
                             <svg class="w-4 h-4 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
                         </a>
-                        <p class="text-center text-xs text-slate-500">You can print or save your booking details from the next page.</p>
+                        <p class="text-center text-xs text-slate-500">On the next page you can download a PDF confirmation or open a printable view.</p>
                     @else
                         <p class="text-center text-sm text-slate-600">Keep this bill number for your records.</p>
                     @endif

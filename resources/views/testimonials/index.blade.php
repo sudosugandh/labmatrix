@@ -40,6 +40,7 @@
                     <thead class="bg-gray-50">
                         <tr>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name / Photo</th>
+                            <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">City</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Quote</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rating</th>
                             <th class="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Featured</th>
@@ -59,6 +60,7 @@
                                         <span class="text-sm font-semibold text-gray-900">{{ $t->name }}</span>
                                     </div>
                                 </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{{ $t->city ?: '—' }}</td>
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-700 max-w-md line-clamp-2">{{ \Illuminate\Support\Str::limit($t->quote, 80) }}</div>
                                 </td>

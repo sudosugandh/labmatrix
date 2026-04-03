@@ -8,15 +8,6 @@
         </div>
     </x-slot>
 
-    @if(session('success'))
-        <div class="mb-6 flex items-center gap-3 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800" role="alert">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100">
-                <svg class="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-            </span>
-            <span class="font-medium">{{ session('success') }}</span>
-        </div>
-    @endif
-
     <!-- Statistics Cards -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">

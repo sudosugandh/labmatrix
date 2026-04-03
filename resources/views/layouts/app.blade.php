@@ -13,13 +13,35 @@
 
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @php
+            $adminBranding = (function_exists('currentLabId') && currentLabId())
+                ? \App\Models\WebsiteSetting::getForCurrentLab()
+                : null;
+            $adminPrimary = $adminBranding?->primary_color ?? '#4f46e5';
+            $adminSecondary = $adminBranding?->secondary_color ?? '#6366f1';
+        @endphp
+        <style>
+            :root {
+                --admin-primary: {{ $adminPrimary }};
+                --admin-secondary: {{ $adminSecondary }};
+            }
+            .admin-sidebar-panel {
+                background: linear-gradient(180deg, color-mix(in srgb, var(--admin-primary) 78%, #0f172a) 0%, color-mix(in srgb, var(--admin-primary) 55%, #020617) 100%);
+            }
+            .admin-mobile-menu-btn {
+                background-color: var(--admin-primary);
+            }
+            .admin-mobile-menu-btn:hover {
+                filter: brightness(0.93);
+            }
+        </style>
     </head>
     <body class="font-sans antialiased bg-gray-50">
         <div class="min-h-screen">
             @include('layouts.navigation')
 
             <!-- Mobile Menu Button -->
-            <button id="mobile-menu-button" class="lg:hidden fixed top-4 left-4 z-50 p-2 bg-indigo-600 text-white rounded-lg shadow-lg hover:bg-indigo-700 transition-colors">
+            <button id="mobile-menu-button" type="button" class="admin-mobile-menu-btn lg:hidden fixed top-4 left-4 z-50 p-2 text-white rounded-lg shadow-lg transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
                 </svg>
@@ -30,7 +52,7 @@
 
             <div class="flex min-h-0 w-full">
                 <!-- Modern Sidebar -->
-                <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 flex-shrink-0 w-64 h-screen bg-gradient-to-b from-indigo-900 via-indigo-800 to-indigo-900 shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain">
+                <aside id="sidebar" class="admin-sidebar-panel fixed lg:sticky top-0 left-0 z-40 flex-shrink-0 w-64 h-screen shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain">
                     <div class="p-6 pt-6">
                         {{-- Drawer: no logo, text only --}}
                         <p class="text-white font-semibold text-sm px-4 mb-4">{{ currentLab()?->name ?? config('app.name') }}</p>
@@ -58,6 +80,18 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                                 </svg>
                                 <span class="font-medium">Doctors</span>
+                            </a>
+                            <a href="{{ route('corporate-accounts.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('corporate-accounts.*') ? 'bg-white bg-opacity-20 shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-10' }}">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                </svg>
+                                <span class="font-medium">Corporate accounts</span>
+                            </a>
+                            <a href="{{ route('health-camps.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('health-camps.*') ? 'bg-white bg-opacity-20 shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-10' }}">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span class="font-medium">Health camps</span>
                             </a>
                             <a href="{{ route('test-packages.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('test-packages.*') ? 'bg-white bg-opacity-20 shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-10' }}">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -97,6 +131,12 @@
                                 </svg>
                                 <span class="font-medium">Reports</span>
                             </a>
+                            <a href="{{ route('report-templates.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('report-templates.*') ? 'bg-white bg-opacity-20 shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-10' }}">
+                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>
+                                </svg>
+                                <span class="font-medium">Report templates</span>
+                            </a>
                             <a href="{{ route('report-builder.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('report-builder.*') ? 'bg-white bg-opacity-20 shadow-lg transform scale-105' : 'hover:bg-white hover:bg-opacity-10' }}">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
@@ -115,9 +155,9 @@
                                 </svg>
                                 <span class="font-medium">Analytics</span>
                             </a>
-                            <div class="border-t border-indigo-700 my-4 pt-4"></div>
+                            <div class="border-t border-white/10 my-4 pt-4"></div>
 
-                            <p class="text-xs text-indigo-300 uppercase tracking-wider px-4 mb-2">Inventory</p>
+                            <p class="text-xs text-white/60 uppercase tracking-wider px-4 mb-2">Inventory</p>
                             <a href="{{ route('inventory.dashboard') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('inventory.dashboard') ? 'bg-white bg-opacity-20 shadow-lg' : 'hover:bg-white hover:bg-opacity-10' }}">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
@@ -143,10 +183,10 @@
                                 <span class="font-medium">Reports & Analytics</span>
                             </a>
 
-                            <div class="border-t border-indigo-700 my-4 pt-4"></div>
+                            <div class="border-t border-white/10 my-4 pt-4"></div>
 
-                            <p class="text-xs text-indigo-300 uppercase tracking-wider px-4 mb-2">Admin & Settings</p>
-                            <a href="{{ route('admin.settings.index') }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.website-settings.*') ? 'bg-white bg-opacity-20 shadow-lg' : 'hover:bg-white hover:bg-opacity-10' }}">
+                            <p class="text-xs text-white/60 uppercase tracking-wider px-4 mb-2">Admin & Settings</p>
+                            <a href="{{ route('admin.settings.index', ['tab' => 'branding']) }}" class="flex items-center px-4 py-3 text-white rounded-xl transition-all duration-200 {{ request()->routeIs('admin.settings.*') || request()->routeIs('admin.website-settings.*') ? 'bg-white bg-opacity-20 shadow-lg' : 'hover:bg-white hover:bg-opacity-10' }}">
                                 <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
@@ -205,8 +245,10 @@
                 </div>
             </div>
         </div>
-        
+
         @stack('scripts')
+
+        <x-flash-toasts />
         
         <script>
             // Enable console logging for debugging

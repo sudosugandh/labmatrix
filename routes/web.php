@@ -1,41 +1,47 @@
 <?php
 
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PatientController;
-use App\Http\Controllers\TestController;
-use App\Http\Controllers\TestOrderController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\WebsiteSettingController;
-use App\Http\Controllers\PageController;
-use App\Http\Controllers\MenuController;
-use App\Http\Controllers\HomepageController;
-use App\Http\Controllers\FrontendPageController;
-use App\Http\Controllers\PublicReportController;
+use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\PublicAppointmentController;
 use App\Http\Controllers\AppointmentSlotController;
 use App\Http\Controllers\BillController;
-use App\Http\Controllers\PaymentController;
-use App\Http\Controllers\SuperAdminController;
-use App\Http\Controllers\TestPackageController;
-use App\Http\Controllers\PublicPackageController;
-use App\Http\Controllers\AnalyticsController;
-use App\Http\Controllers\DoctorController;
-use App\Http\Controllers\ExportController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\TechnicianController;
-use App\Http\Controllers\ReportBuilderController;
-use App\Http\Controllers\InventoryItemController;
-use App\Http\Controllers\InventoryAdjustmentController;
-use App\Http\Controllers\InventoryReportController;
-use App\Http\Controllers\TestConsumableController;
+use App\Http\Controllers\CmsImageController;
+use App\Http\Controllers\CorporateAccountController;
+use App\Http\Controllers\CorporatePortalController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DiagnosticReportTemplateController;
+use App\Http\Controllers\DoctorController;
+use App\Http\Controllers\DoctorPortalController;
+use App\Http\Controllers\ExportController;
 use App\Http\Controllers\FaqController;
+use App\Http\Controllers\FrontendPageController;
+use App\Http\Controllers\HealthCampController;
+use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\HomeVisitRequestController;
+use App\Http\Controllers\InventoryAdjustmentController;
+use App\Http\Controllers\InventoryItemController;
+use App\Http\Controllers\InventoryReportController;
+use App\Http\Controllers\MenuController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PageController;
+use App\Http\Controllers\PatientController;
+use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PromoController;
+use App\Http\Controllers\PublicAppointmentController;
 use App\Http\Controllers\PublicBillPaymentController;
+use App\Http\Controllers\PublicContactController;
+use App\Http\Controllers\PublicPackageController;
+use App\Http\Controllers\PublicReportController;
+use App\Http\Controllers\ReportBuilderController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SuperAdminController;
+use App\Http\Controllers\TechnicianController;
+use App\Http\Controllers\TestConsumableController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\TestimonialController;
+use App\Http\Controllers\TestOrderController;
+use App\Http\Controllers\TestPackageController;
+use App\Http\Controllers\WebsiteSettingController;
 use Illuminate\Support\Facades\Route;
 
 // Auth Routes (must be before dynamic slug route)
@@ -81,12 +87,20 @@ Route::get('/my-appointments/{appointment}', [PublicAppointmentController::class
 Route::get('/my-appointments/{appointment}/print', [PublicAppointmentController::class, 'print'])
     ->where('appointment', '[0-9]+')
     ->name('public.appointments.print');
+Route::get('/my-appointments/{appointment}/confirmation.pdf', [PublicAppointmentController::class, 'downloadConfirmation'])
+    ->where('appointment', '[0-9]+')
+    ->name('public.appointments.confirmation.download');
 Route::delete('/my-appointments/{appointment}', [PublicAppointmentController::class, 'cancel'])
     ->where('appointment', '[0-9]+')
     ->name('public.appointments.cancel');
 
 // Home visit / home collection lead popup
 Route::post('/home-visit-request', [HomeVisitRequestController::class, 'store'])->name('public.home-visit-request.store');
+
+// Public contact form (before dynamic /{slug})
+Route::post('/contact', [PublicContactController::class, 'store'])
+    ->middleware('throttle:10,1')
+    ->name('public.contact.store');
 
 // Public payment link (pay bill by token - no auth)
 Route::get('/pay-bill/{token}', [PublicBillPaymentController::class, 'show'])->name('public.bill-pay.show');
@@ -96,23 +110,48 @@ Route::post('/pay-bill/create-stripe-session', [PublicBillPaymentController::cla
 Route::get('/pay-bill/{token}/success', [PublicBillPaymentController::class, 'success'])->name('public.bill-pay.success');
 Route::get('/pay-bill/{token}/stripe-success', [PublicBillPaymentController::class, 'stripeSuccess'])->name('public.bill-pay.stripe-success');
 
+// Doctor portal (lab from domain via DetectDomain)
+Route::prefix('doctor-portal')->name('doctor.portal.')->group(function () {
+    Route::get('/login', [DoctorPortalController::class, 'showLogin'])->name('login');
+    Route::post('/login', [DoctorPortalController::class, 'login']);
+    Route::post('/logout', [DoctorPortalController::class, 'logout'])->name('logout');
+    Route::middleware('auth:doctor')->group(function () {
+        Route::get('/', [DoctorPortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/commissions', [DoctorPortalController::class, 'commissions'])->name('commissions');
+        Route::get('/referrals', [DoctorPortalController::class, 'referrals'])->name('referrals');
+        Route::get('/reports', [DoctorPortalController::class, 'reports'])->name('reports');
+    });
+});
+
+// Corporate / employer portal (B2B)
+Route::prefix('corporate-portal')->name('corporate.portal.')->group(function () {
+    Route::get('/login', [CorporatePortalController::class, 'showLogin'])->name('login');
+    Route::post('/login', [CorporatePortalController::class, 'login']);
+    Route::post('/logout', [CorporatePortalController::class, 'logout'])->name('logout');
+    Route::middleware('auth:corporate')->group(function () {
+        Route::get('/', [CorporatePortalController::class, 'dashboard'])->name('dashboard');
+        Route::get('/camps/{healthCamp}', [CorporatePortalController::class, 'camp'])->name('camp');
+        Route::get('/camps/{healthCamp}/export', [CorporatePortalController::class, 'campExport'])->name('camp.export');
+    });
+});
+
 // Admin Routes (Authenticated) - Must be before dynamic slug route
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Settings (Comprehensive Settings System)
     Route::get('/settings', [WebsiteSettingController::class, 'index'])->name('settings.index');
     Route::put('/settings', [WebsiteSettingController::class, 'update'])->name('settings.update');
     Route::delete('/settings/banner/{index}', [WebsiteSettingController::class, 'deleteBanner'])->name('settings.delete-banner');
-    
+
     // Legacy route for backward compatibility
     Route::get('/website-settings', [WebsiteSettingController::class, 'index'])->name('website-settings.edit');
     Route::put('/website-settings', [WebsiteSettingController::class, 'update'])->name('website-settings.update');
-    
+
     // CMS Pages
     Route::resource('pages', PageController::class);
-    Route::post('/cms/upload-image', [\App\Http\Controllers\CmsImageController::class, 'store'])->name('cms.upload-image');
-    
+    Route::post('/cms/upload-image', [CmsImageController::class, 'store'])->name('cms.upload-image');
+
     // Menus
     Route::get('/menus', [MenuController::class, 'index'])->name('menus.index');
     Route::post('/menus', [MenuController::class, 'store'])->name('menus.store');
@@ -125,7 +164,10 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
 // Super Admin Routes
 Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-admin.')->group(function () {
     Route::get('/dashboard', [SuperAdminController::class, 'dashboard'])->name('dashboard');
-    
+    Route::get('/activity', [SuperAdminController::class, 'activity'])->name('activity.index');
+    Route::get('/domains', [SuperAdminController::class, 'domains'])->name('domains.index');
+    Route::get('/users', [SuperAdminController::class, 'users'])->name('users.index');
+
     // Labs Management
     Route::get('/labs', [SuperAdminController::class, 'labs'])->name('labs.index');
     Route::get('/labs/create', [SuperAdminController::class, 'createLab'])->name('labs.create');
@@ -138,28 +180,28 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
     Route::patch('/labs/{lab}/level', [SuperAdminController::class, 'updateLabLevel'])->name('labs.update-level');
     Route::post('/labs/{lab}/suspend', [SuperAdminController::class, 'suspendLab'])->name('labs.suspend');
     Route::post('/labs/{lab}/activate', [SuperAdminController::class, 'activateLab'])->name('labs.activate');
-    
+
     // Domain Management
     Route::post('/labs/{lab}/domains', [SuperAdminController::class, 'storeDomain'])->name('labs.domains.store');
     Route::put('/labs/{lab}/domains/{domain}', [SuperAdminController::class, 'updateDomain'])->name('labs.domains.update');
     Route::delete('/labs/{lab}/domains/{domain}', [SuperAdminController::class, 'destroyDomain'])->name('labs.domains.destroy');
-    
+
     // User Management
     Route::post('/labs/{lab}/users', [SuperAdminController::class, 'storeUser'])->name('labs.users.store');
     Route::put('/labs/{lab}/users/{user}', [SuperAdminController::class, 'updateUser'])->name('labs.users.update');
     Route::delete('/labs/{lab}/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('labs.users.destroy');
-    
+
     // Lab Settings & Features
     Route::put('/labs/{lab}/settings', [SuperAdminController::class, 'updateLabSettings'])->name('labs.settings.update');
     Route::put('/labs/{lab}/features', [SuperAdminController::class, 'updateLabFeatures'])->name('labs.features.update');
-    
+
     // Lab Subscription & Billing
     Route::put('/labs/{lab}/subscription', [SuperAdminController::class, 'updateLabSubscription'])->name('labs.subscription.update');
-    
+
     // Lab Support Notes
     Route::post('/labs/{lab}/support-notes', [SuperAdminController::class, 'storeSupportNote'])->name('labs.support-notes.store');
     Route::delete('/labs/{lab}/support-notes/{note}', [SuperAdminController::class, 'destroySupportNote'])->name('labs.support-notes.destroy');
-    
+
     // Lab Data Export
     Route::get('/labs/{lab}/export-data', [SuperAdminController::class, 'exportLabData'])->name('labs.export-data');
 });
@@ -167,34 +209,39 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
 // Admin Dashboard Routes (Authenticated) - Must be before dynamic slug route
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     // Patients
     Route::resource('patients', PatientController::class);
-    
+
     // Tests
     Route::resource('tests', TestController::class)->except(['show']);
     Route::post('/tests/{test}/parameters', [TestController::class, 'storeParameter'])->name('tests.parameters.store');
     Route::put('/tests/{test}/parameters/{parameter}', [TestController::class, 'updateParameter'])->name('tests.parameters.update');
     Route::delete('/tests/{test}/parameters/{parameter}', [TestController::class, 'destroyParameter'])->name('tests.parameters.destroy');
-    
+
     // Doctors
     Route::resource('doctors', DoctorController::class);
     Route::get('/doctors/{doctor}/commissions', [DoctorController::class, 'commissions'])->name('doctors.commissions');
     Route::post('/doctor-commissions/{commission}/pay', [DoctorController::class, 'payCommission'])->name('doctor-commissions.pay');
-    
+
+    // B2B: corporate accounts & health camps
+    Route::resource('corporate-accounts', CorporateAccountController::class);
+    Route::resource('health-camps', HealthCampController::class);
+    Route::post('/health-camps/{healthCamp}/attach-order', [HealthCampController::class, 'attachOrder'])->name('health-camps.attach-order');
+
     // Test Packages
     Route::resource('test-packages', TestPackageController::class);
-    
+
     // Technicians (only for large labs)
     Route::resource('technicians', TechnicianController::class);
-    
+
     // Test Orders
     Route::resource('orders', TestOrderController::class);
     Route::patch('/orders/{order}/status', [TestOrderController::class, 'updateStatus'])->name('orders.update-status');
     Route::post('/orders/{order}/quick-action', [TestOrderController::class, 'quickAction'])->name('orders.quick-action');
     Route::get('/orders/{order}/enter-results', [TestOrderController::class, 'enterResults'])->name('orders.enter-results');
     Route::post('/orders/{order}/save-results', [TestOrderController::class, 'saveResults'])->name('orders.save-results');
-    
+
     // Reports
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/create/{order}', [ReportController::class, 'create'])->name('reports.create');
@@ -205,7 +252,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/reports/{report}/doctor-signature', [ReportController::class, 'updateDoctorSignature'])->name('reports.update-doctor-signature');
     Route::get('/reports/{report}', [ReportController::class, 'show'])->name('reports.show');
     Route::get('/reports/{report}/download', [ReportController::class, 'download'])->name('reports.download');
-    
+
     // Diagnostic Report Templates
     Route::resource('report-templates', DiagnosticReportTemplateController::class);
     Route::post('/report-templates/{reportTemplate}/sections', [DiagnosticReportTemplateController::class, 'storeSection'])->name('report-templates.sections.store');
@@ -213,35 +260,35 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::put('/report-templates/{reportTemplate}/sections/{section}', [DiagnosticReportTemplateController::class, 'updateSection'])->name('report-templates.sections.update');
     Route::delete('/report-templates/{reportTemplate}/sections/{section}', [DiagnosticReportTemplateController::class, 'destroySection'])->name('report-templates.sections.destroy');
     Route::post('/report-templates/{reportTemplate}/reorder-sections', [DiagnosticReportTemplateController::class, 'reorderSections'])->name('report-templates.reorder-sections');
-    
+
     // Testimonials, FAQ, Promos (CMS)
     Route::resource('testimonials', TestimonialController::class)->except(['show']);
     Route::resource('faqs', FaqController::class)->except(['show']);
     Route::resource('promos', PromoController::class)->except(['show']);
-    
+
     // Bills & Payments
     Route::resource('bills', BillController::class);
     Route::get('/bills/{bill}/print', [BillController::class, 'print'])->name('bills.print');
     Route::post('/bills/{bill}/payments', [PaymentController::class, 'store'])->name('payments.store');
     Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
-    
+
     // Appointments
     Route::resource('appointments', AppointmentController::class);
     Route::patch('/appointments/{appointment}/status', [AppointmentController::class, 'updateStatus'])->name('appointments.update-status');
     Route::resource('appointment-slots', AppointmentSlotController::class)->except(['show']);
-    
+
     // Inventory Management (Simplified for Diagnostic Labs)
     Route::prefix('inventory')->name('inventory.')->group(function () {
         // Inventory Items
         Route::resource('items', InventoryItemController::class);
         Route::post('/items/{item}/adjust-stock', [InventoryItemController::class, 'adjustStock'])->name('items.adjust-stock');
-        
+
         // Stock Adjustments
         Route::get('/adjustments', [InventoryAdjustmentController::class, 'index'])->name('adjustments.index');
-        
+
         // Inventory Dashboard
         Route::get('/dashboard', [InventoryItemController::class, 'dashboard'])->name('dashboard');
-        
+
         // Inventory Reports & Analytics
         Route::prefix('reports')->name('reports.')->group(function () {
             Route::get('/', [InventoryReportController::class, 'index'])->name('index');
@@ -253,22 +300,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::get('/export', [InventoryReportController::class, 'export'])->name('export');
         });
     });
-    
+
     // Test Consumables
     Route::get('/tests/{test}/consumables', [TestConsumableController::class, 'index'])->name('tests.consumables.index');
     Route::post('/tests/{test}/consumables', [TestConsumableController::class, 'store'])->name('tests.consumables.store');
     Route::delete('/test-consumables/{consumable}', [TestConsumableController::class, 'destroy'])->name('tests.consumables.destroy');
-    
+
     // Analytics & Reports
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/analytics/export', [AnalyticsController::class, 'export'])->name('analytics.export');
-    
+
     // Export Routes
     Route::get('/export/patients', [ExportController::class, 'exportPatients'])->name('export.patients');
     Route::get('/export/test-orders', [ExportController::class, 'exportTestOrders'])->name('export.test-orders');
     Route::get('/export/appointments', [ExportController::class, 'exportAppointments'])->name('export.appointments');
     Route::get('/export/bills', [ExportController::class, 'exportBills'])->name('export.bills');
-    
+
     // Notifications
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
@@ -277,7 +324,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
     Route::delete('/notifications/{id}', [NotificationController::class, 'destroy'])->name('notifications.destroy');
     Route::delete('/notifications/read/all', [NotificationController::class, 'deleteAllRead'])->name('notifications.delete-all-read');
-    
+
     // Report Builder
     Route::get('/report-builder', [ReportBuilderController::class, 'index'])->name('report-builder.index');
     Route::get('/report-builder/create', [ReportBuilderController::class, 'create'])->name('report-builder.create');
@@ -288,14 +335,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/report-builder/{template}/load', [ReportBuilderController::class, 'load'])->name('report-builder.load');
     Route::post('/report-builder/preview', [ReportBuilderController::class, 'preview'])->name('report-builder.preview');
     Route::post('/report-builder/export', [ReportBuilderController::class, 'export'])->name('report-builder.export');
-    
+
     // Scheduled Reports
     Route::get('/report-builder/scheduled', [ReportBuilderController::class, 'scheduled'])->name('report-builder.scheduled');
     Route::get('/report-builder/scheduled/create', [ReportBuilderController::class, 'createScheduled'])->name('report-builder.scheduled.create');
     Route::post('/report-builder/scheduled', [ReportBuilderController::class, 'storeScheduled'])->name('report-builder.scheduled.store');
     Route::post('/report-builder/scheduled/{scheduledReport}/toggle', [ReportBuilderController::class, 'toggleScheduled'])->name('report-builder.scheduled.toggle');
     Route::delete('/report-builder/scheduled/{scheduledReport}', [ReportBuilderController::class, 'destroyScheduled'])->name('report-builder.scheduled.destroy');
-    
+
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

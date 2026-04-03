@@ -9,14 +9,11 @@ use App\Models\InventoryItem;
 use App\Models\User;
 use App\Models\Lab;
 use App\Services\InventoryService;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Illuminate\Support\Facades\DB;
 
 class PurchaseOrderTest extends TestCase
 {
-    use RefreshDatabase;
-
     protected $user;
     protected $lab;
     protected $supplier;

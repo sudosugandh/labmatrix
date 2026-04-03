@@ -2,21 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TestOrder;
+use App\Models\Appointment;
 use App\Models\Patient;
-use App\Models\Test;
-use App\Models\TestPackage;
-use App\Models\Technician;
-use App\Models\TestResult;
 use App\Models\Report;
+use App\Models\ReportTest;
+use App\Models\Technician;
+use App\Models\Test;
+use App\Models\TestOrder;
+use App\Models\TestPackage;
 use App\Services\InventoryService;
-use App\Services\TestResultService;
 use App\Services\TestOrderWorkflowService;
-use Illuminate\Http\Request;
+use App\Services\TestResultService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Barryvdh\DomPDF\Facade\Pdf;
 
 class TestOrderController extends Controller
 {
@@ -26,36 +27,36 @@ class TestOrderController extends Controller
     public function index(Request $request)
     {
         $labId = currentLabId();
-        
+
         $query = TestOrder::where('lab_id', $labId)
             ->with(['patient', 'test', 'package', 'technician', 'collectedBy']);
-        
+
         // Search functionality
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('patient', function($q) use ($search) {
+            $query->whereHas('patient', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
-            })->orWhereHas('test', function($q) use ($search) {
+                    ->orWhere('phone', 'like', "%{$search}%");
+            })->orWhereHas('test', function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%");
             });
         }
-        
+
         // Filter by status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
-        
+
         // Filter by sample status
         if ($request->filled('sample_status')) {
             $query->where('sample_status', $request->sample_status);
         }
-        
+
         // Filter by report status
         if ($request->filled('report_status')) {
             $query->where('report_status', $request->report_status);
         }
-        
+
         // Filter by order type (package vs test)
         if ($request->filled('order_type')) {
             if ($request->order_type === 'package') {
@@ -64,12 +65,12 @@ class TestOrderController extends Controller
                 $query->whereNull('package_id');
             }
         }
-        
+
         $orders = $query->latest()->paginate(15)->withQueryString();
-        
+
         // Statistics - Use caching for better performance
         $cacheKey = "test_order_stats_{$labId}";
-        $stats = cache()->remember($cacheKey, 300, function() use ($labId) {
+        $stats = cache()->remember($cacheKey, 300, function () use ($labId) {
             return [
                 'total' => TestOrder::where('lab_id', $labId)->count(),
                 'pending' => TestOrder::where('lab_id', $labId)->where('sample_status', 'pending')->count(),
@@ -78,22 +79,68 @@ class TestOrderController extends Controller
                 'reports_ready' => TestOrder::where('lab_id', $labId)->where('report_status', 'completed')->count(),
             ];
         });
-        
+
         return view('orders.index', compact('orders', 'stats'));
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(Request $request)
     {
-        $patients = Patient::where('lab_id', currentLabId())->get();
-        $tests = Test::where('lab_id', currentLabId())->get();
-        $packages = TestPackage::where('lab_id', currentLabId())->where('is_active', true)->get();
+        $labId = currentLabId();
+        $patients = Patient::where('lab_id', $labId)->get();
+        $tests = Test::where('lab_id', $labId)->get();
+        $packages = TestPackage::where('lab_id', $labId)->where('is_active', true)->with('tests')->get();
         // Only load technicians if lab is large level
-        $technicians = isLargeLab() ? Technician::where('lab_id', currentLabId())->get() : collect();
+        $technicians = isLargeLab() ? Technician::where('lab_id', $labId)->get() : collect();
 
-        return view('orders.create', compact('patients', 'tests', 'packages', 'technicians'));
+        $appointment = null;
+        if ($request->filled('appointment_id')) {
+            $appointment = Appointment::where('lab_id', $labId)
+                ->whereKey($request->integer('appointment_id'))
+                ->with(['package', 'tests'])
+                ->first();
+            if ($appointment && $request->filled('patient_id')
+                && (int) $request->input('patient_id') !== (int) $appointment->patient_id) {
+                $appointment = null;
+            }
+        }
+
+        if ($request->session()->hasOldInput()) {
+            $defaultPatientId = old('patient_id');
+            $defaultOrderType = old('order_type', 'test');
+            $defaultTestId = old('test_id');
+            $defaultPackageId = old('package_id');
+        } else {
+            $defaultPatientId = $request->input('patient_id');
+            $defaultOrderType = 'test';
+            $defaultTestId = null;
+            $defaultPackageId = null;
+
+            if ($appointment) {
+                $defaultPatientId = $appointment->patient_id;
+                if ($appointment->package_id) {
+                    $defaultOrderType = 'package';
+                    $defaultPackageId = $appointment->package_id;
+                } elseif ($appointment->tests->isNotEmpty()) {
+                    $defaultOrderType = 'test';
+                    $defaultTestId = $appointment->tests->first()->id;
+                }
+            }
+        }
+
+        return view('orders.create', compact(
+            'patients',
+            'tests',
+            'packages',
+            'technicians',
+            'appointment',
+            'defaultPatientId',
+            'defaultOrderType',
+            'defaultTestId',
+            'defaultPackageId'
+        ));
     }
 
     /**
@@ -104,6 +151,7 @@ class TestOrderController extends Controller
         // Base validation rules
         $rules = [
             'patient_id' => 'required|exists:patients,id',
+            'appointment_id' => 'nullable|exists:appointments,id',
             'order_type' => 'required|in:test,package',
             'status' => 'nullable|in:pending,sample_collected,processing,completed,report_uploaded',
             'technician_id' => 'nullable|exists:technicians,id',
@@ -127,6 +175,18 @@ class TestOrderController extends Controller
             unset($validated['test_id']);
         }
 
+        $appointmentId = null;
+        if (! empty($validated['appointment_id'])) {
+            $linked = Appointment::where('id', $validated['appointment_id'])
+                ->where('lab_id', currentLabId())
+                ->where('patient_id', $validated['patient_id'])
+                ->exists();
+            if ($linked) {
+                $appointmentId = (int) $validated['appointment_id'];
+            }
+        }
+        unset($validated['appointment_id']);
+
         // Verify patient belongs to current lab
         $patient = Patient::where('id', $validated['patient_id'])
             ->where('lab_id', currentLabId())
@@ -146,6 +206,7 @@ class TestOrderController extends Controller
                     $orders[] = [
                         'lab_id' => currentLabId(),
                         'patient_id' => $validated['patient_id'],
+                        'appointment_id' => $appointmentId,
                         'test_id' => $test->id,
                         'package_id' => $package->id,
                         'status' => $validated['status'] ?? 'pending',
@@ -163,13 +224,13 @@ class TestOrderController extends Controller
                 foreach ($orders as $orderData) {
                     $order = TestOrder::create($orderData);
                     $createdOrders[] = $order;
-                    
+
                     // Auto-load parameters for each test order
                     try {
                         $testResultService = app(TestResultService::class);
                         $testResultService->loadParametersForOrder($order);
                     } catch (\Exception $e) {
-                        \Log::warning('Failed to load parameters for order ' . $order->id . ': ' . $e->getMessage());
+                        \Log::warning('Failed to load parameters for order '.$order->id.': '.$e->getMessage());
                         // Continue even if parameter loading fails
                     }
                 }
@@ -183,6 +244,7 @@ class TestOrderController extends Controller
                 $orderData = [
                     'lab_id' => currentLabId(),
                     'patient_id' => $validated['patient_id'],
+                    'appointment_id' => $appointmentId,
                     'test_id' => $validated['test_id'],
                     'status' => $validated['status'] ?? 'pending',
                     'sample_status' => 'pending',
@@ -200,16 +262,16 @@ class TestOrderController extends Controller
                 }
 
                 $order = TestOrder::create($orderData);
-                
+
                 // Auto-load parameters for test order
                 try {
                     $testResultService = app(TestResultService::class);
                     $testResultService->loadParametersForOrder($order);
                 } catch (\Exception $e) {
-                    \Log::warning('Failed to load parameters for order ' . $order->id . ': ' . $e->getMessage());
+                    \Log::warning('Failed to load parameters for order '.$order->id.': '.$e->getMessage());
                     // Continue even if parameter loading fails
                 }
-                
+
                 $message = 'Test order created successfully.';
             }
 
@@ -219,13 +281,14 @@ class TestOrderController extends Controller
                 ->with('success', $message);
         } catch (\Exception $e) {
             DB::rollBack();
-            \Log::error('Test Order Creation Failed: ' . $e->getMessage(), [
+            \Log::error('Test Order Creation Failed: '.$e->getMessage(), [
                 'trace' => $e->getTraceAsString(),
-                'request' => $request->all()
+                'request' => $request->all(),
             ]);
+
             return back()
                 ->withInput()
-                ->with('error', 'Failed to create order: ' . $e->getMessage());
+                ->with('error', 'Failed to create order: '.$e->getMessage());
         }
     }
 
@@ -240,7 +303,7 @@ class TestOrderController extends Controller
         }
 
         $order->load(['patient', 'test', 'report', 'technician', 'collectedBy']);
-        
+
         // Only load technicians if lab is large level
         $technicians = isLargeLab() ? Technician::where('lab_id', currentLabId())->get() : collect();
 
@@ -278,7 +341,7 @@ class TestOrderController extends Controller
             $validated['report_status'] ?? null
         );
 
-        if (!$transition['valid']) {
+        if (! $transition['valid']) {
             return redirect()->route('orders.show', $order)
                 ->withErrors(['workflow' => implode(' ', $transition['errors'])]);
         }
@@ -288,7 +351,7 @@ class TestOrderController extends Controller
 
         // Handle sample collection timestamp
         if (isset($updates['sample_status']) && $updates['sample_status'] === 'collected') {
-            if (!$order->sample_collected_at) {
+            if (! $order->sample_collected_at) {
                 $updates['sample_collected_at'] = now();
                 $updates['collected_by'] = Auth::id();
             }
@@ -299,19 +362,19 @@ class TestOrderController extends Controller
             $technician = Technician::where('id', $updates['technician_id'])
                 ->where('lab_id', currentLabId())
                 ->firstOrFail();
-        } elseif (isset($updates['technician_id']) && !isLargeLab()) {
+        } elseif (isset($updates['technician_id']) && ! isLargeLab()) {
             // Remove technician_id if lab is not large level
             unset($updates['technician_id']);
         }
 
         $oldStatus = $order->status;
         $oldReportStatus = $order->report_status;
-        
+
         // Check if status will change to completed or report_uploaded
         $willBeCompleted = ($updates['status'] === 'completed' && $oldStatus !== 'completed');
         $willBeReportUploaded = ($updates['status'] === 'report_uploaded' && $oldStatus !== 'report_uploaded');
         $reportStatusCompleted = (isset($updates['report_status']) && $updates['report_status'] === 'completed' && $oldReportStatus !== 'completed');
-        
+
         $order->update($updates);
 
         $reportCreated = false;
@@ -323,7 +386,7 @@ class TestOrderController extends Controller
                 $inventoryService = app(InventoryService::class);
                 $inventoryService->deductInventoryForTest($order);
             } catch (\Exception $e) {
-                \Log::error("Failed to deduct inventory for test order {$order->id}: " . $e->getMessage());
+                \Log::error("Failed to deduct inventory for test order {$order->id}: ".$e->getMessage());
                 // Don't fail the status update if inventory deduction fails
             }
 
@@ -332,12 +395,12 @@ class TestOrderController extends Controller
             $hasResults = $order->testResults()->exists();
             $hasReport = $order->report()->exists();
 
-            if ($hasResults && !$hasReport) {
+            if ($hasResults && ! $hasReport) {
                 try {
                     $this->autoCreateDraftReport($order);
                     $reportCreated = true;
                 } catch (\Exception $e) {
-                    \Log::error("Failed to auto-create draft report for test order {$order->id}: " . $e->getMessage());
+                    \Log::error("Failed to auto-create draft report for test order {$order->id}: ".$e->getMessage());
                     // Don't fail the status update if report creation fails
                 }
             }
@@ -377,7 +440,7 @@ class TestOrderController extends Controller
 
         $action = $request->input('action');
         $workflowService = app(TestOrderWorkflowService::class);
-        
+
         $updates = [];
         $message = '';
 
@@ -424,23 +487,23 @@ class TestOrderController extends Controller
                     if ($transition['valid']) {
                         $updates = $transition['updates'];
                         $message = 'Test completed!';
-                        
+
                         // Auto-deduct inventory
                         try {
                             $inventoryService = app(InventoryService::class);
                             $inventoryService->deductInventoryForTest($order);
                         } catch (\Exception $e) {
-                            \Log::error("Failed to deduct inventory: " . $e->getMessage());
+                            \Log::error('Failed to deduct inventory: '.$e->getMessage());
                         }
 
                         // Auto-create report if results exist
                         $order->refresh();
-                        if ($order->testResults()->exists() && !$order->report()->exists()) {
+                        if ($order->testResults()->exists() && ! $order->report()->exists()) {
                             try {
                                 $this->autoCreateDraftReport($order);
                                 $message .= ' Draft report created automatically.';
                             } catch (\Exception $e) {
-                                \Log::error("Failed to auto-create report: " . $e->getMessage());
+                                \Log::error('Failed to auto-create report: '.$e->getMessage());
                             }
                         }
                     }
@@ -466,7 +529,7 @@ class TestOrderController extends Controller
 
         // Handle sample collection timestamp
         if (isset($updates['sample_status']) && $updates['sample_status'] === 'collected') {
-            if (!$order->sample_collected_at) {
+            if (! $order->sample_collected_at) {
                 $updates['sample_collected_at'] = now();
                 $updates['collected_by'] = Auth::id();
             }
@@ -495,17 +558,17 @@ class TestOrderController extends Controller
             abort(404);
         }
 
-        $order->load(['patient', 'test', 'testResults.testParameter']);
-        
+        $order->load(['patient', 'test', 'testResults.testParameter', 'report']);
+
         // Ensure parameters are loaded
         $testResultService = app(TestResultService::class);
         $testResultService->loadParametersForOrder($order);
-        
+
         // Reload to get fresh results
-        $order->load('testResults.testParameter');
-        
+        $order->load(['testResults.testParameter', 'report']);
+
         // Sort results by parameter sort_order
-        $results = $order->testResults->sortBy(function($result) {
+        $results = $order->testResults->sortBy(function ($result) {
             return $result->testParameter ? $result->testParameter->sort_order : 999;
         });
 
@@ -526,10 +589,11 @@ class TestOrderController extends Controller
             'results' => 'required|array',
             'results.*.result_id' => 'required|exists:test_results,id',
             'results.*.result_value' => 'nullable|string|max:255',
+            'next' => 'nullable|in:stay,report',
         ]);
 
         $testResultService = app(TestResultService::class);
-        
+
         foreach ($validated['results'] as $resultData) {
             $testResultService->saveResult([
                 'result_id' => $resultData['result_id'],
@@ -542,8 +606,23 @@ class TestOrderController extends Controller
             $order->update(['status' => 'processing']);
         }
 
-        return redirect()->route('orders.show', $order)
-            ->with('success', 'Test results saved successfully.');
+        $order->refresh();
+        $order->load('report');
+
+        $next = $validated['next'] ?? 'stay';
+
+        if ($next === 'report') {
+            if ($order->report) {
+                return redirect()->route('reports.show', $order->report)
+                    ->with('success', 'Results saved. Opening the report for this order.');
+            }
+
+            return redirect()->route('reports.create', $order)
+                ->with('success', 'Results saved. Generate or upload the report below.');
+        }
+
+        return redirect()->route('orders.enter-results', $order)
+            ->with('success', 'Results saved.');
     }
 
     /**
@@ -560,18 +639,18 @@ class TestOrderController extends Controller
         }
 
         // Check if results exist
-        if (!$order->testResults()->exists()) {
+        if (! $order->testResults()->exists()) {
             return;
         }
 
         // Generate report number
-        $reportNumber = 'RPT-' . str_pad($order->lab_id, 3, '0', STR_PAD_LEFT) . '-' . 
-                       date('Y') . '-' . str_pad(Report::where('lab_id', currentLabId())
+        $reportNumber = 'RPT-'.str_pad($order->lab_id, 3, '0', STR_PAD_LEFT).'-'.
+                       date('Y').'-'.str_pad(Report::where('lab_id', currentLabId())
                            ->whereYear('created_at', date('Y'))
                            ->count() + 1, 5, '0', STR_PAD_LEFT);
 
         // Generate PDF report using reflection to access protected method
-        $reportController = app(\App\Http\Controllers\ReportController::class);
+        $reportController = app(ReportController::class);
         $reflection = new \ReflectionClass($reportController);
         $method = $reflection->getMethod('generatePdfReport');
         $method->setAccessible(true);
@@ -582,7 +661,7 @@ class TestOrderController extends Controller
             'lab_id' => $order->lab_id,
             'patient_id' => $order->patient_id,
             'test_order_id' => $order->id,
-            'report_name' => $order->test->name . ' Report',
+            'report_name' => $order->test->name.' Report',
             'report_file' => $pdfPath,
             'status' => 'pending',
             'workflow_status' => 'draft',
@@ -591,7 +670,7 @@ class TestOrderController extends Controller
         ]);
 
         // Create report_test entry
-        \App\Models\ReportTest::create([
+        ReportTest::create([
             'report_id' => $report->id,
             'test_order_id' => $order->id,
             'test_id' => $order->test_id,

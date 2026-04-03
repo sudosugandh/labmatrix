@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WebsiteSetting;
 use App\Models\Lab;
 use App\Models\Menu;
 use App\Models\Page;
-use Illuminate\Http\Request;
+use App\Models\WebsiteSetting;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -17,7 +17,10 @@ class WebsiteSettingController extends Controller
     {
         $settings = WebsiteSetting::getForCurrentLab();
         $lab = Lab::find(currentLabId());
-        $activeTab = $request->get('tab', 'general');
+        $activeTab = $request->get('tab', 'branding');
+        if ($activeTab === 'contact') {
+            return redirect()->route('admin.settings.index', ['tab' => 'branding']);
+        }
 
         $mainMenu = null;
         $cmsPages = collect();
@@ -26,7 +29,7 @@ class WebsiteSettingController extends Controller
                 ->where('name', 'Main Menu')
                 ->with('items')
                 ->first();
-            if (!$mainMenu) {
+            if (! $mainMenu) {
                 $mainMenu = Menu::create(['lab_id' => currentLabId(), 'name' => 'Main Menu']);
                 $mainMenu->load('items');
             }
@@ -42,10 +45,14 @@ class WebsiteSettingController extends Controller
     public function update(Request $request): RedirectResponse
     {
         $settings = WebsiteSetting::getForCurrentLab();
-        $tab = $request->get('tab', 'general');
-        
+        $tab = $request->get('tab', 'branding');
+
         $rules = $this->getValidationRules($tab);
         $validated = $request->validate($rules);
+
+        if ($tab === 'branding' && array_key_exists('secondary_color', $validated) && ($validated['secondary_color'] === '' || $validated['secondary_color'] === null)) {
+            $validated['secondary_color'] = null;
+        }
 
         // Handle file uploads
         $this->handleFileUploads($request, $settings, $validated);
@@ -54,11 +61,11 @@ class WebsiteSettingController extends Controller
         if ($request->has('banner_images')) {
             $validated['banner_images'] = $this->handleBannerImages($request, $settings);
         }
-        
+
         if ($request->has('available_languages')) {
             $validated['available_languages'] = $request->available_languages ?? [];
         }
-        
+
         if ($request->has('ip_whitelist')) {
             $validated['ip_whitelist'] = array_filter(explode(',', $request->ip_whitelist ?? ''));
         }
@@ -90,6 +97,44 @@ class WebsiteSettingController extends Controller
             $validated['meta_description'] = $request->input('meta_description');
             $validated['show_promos_section'] = $request->boolean('show_promos_section');
             $validated['promos_heading'] = $request->input('promos_heading');
+            $validated['promos_subtitle'] = $request->input('promos_subtitle');
+            $validated['promos_today_strip_enabled'] = $request->boolean('promos_today_strip_enabled');
+            $validated['promos_today_heading'] = $request->input('promos_today_heading');
+            $validated['promos_today_subtitle'] = $request->input('promos_today_subtitle');
+            $validated['trust_strip_enabled'] = $request->boolean('trust_strip_enabled');
+            $validated['spotlight_enabled'] = $request->boolean('spotlight_enabled');
+            $validated['trust_strip_items'] = $this->mergeTrustStripItemsFromRequest($request, $settings);
+            $validated['about_intro'] = $request->input('about_intro');
+            $validated['about_why_cards'] = $this->mergeAboutWhyCardsFromRequest($request);
+            $validated['about_stat_tests'] = $request->input('about_stat_tests');
+            $validated['about_stat_patients'] = $request->input('about_stat_patients');
+            $validated['about_stat_years'] = $request->input('about_stat_years');
+            $validated['about_working_hours'] = $request->input('about_working_hours');
+            $validated['spotlight_experience'] = $request->input('spotlight_experience');
+            $validated['about_team_trust_line'] = $request->input('about_team_trust_line');
+            $validated['contact_working_hours'] = $request->input('contact_working_hours');
+            $validated['footer_tagline'] = $request->input('footer_tagline');
+            $validated['pre_footer_heading'] = $request->input('pre_footer_heading');
+            $validated['pre_footer_subtitle'] = $request->input('pre_footer_subtitle');
+            $validated['pre_footer_cta_enabled'] = $request->boolean('pre_footer_cta_enabled');
+            $validated['footer_show_trust_badges'] = $request->boolean('footer_show_trust_badges');
+            $validated['footer_trust_nabl'] = $request->boolean('footer_trust_nabl');
+            $validated['footer_trust_iso'] = $request->boolean('footer_trust_iso');
+            $validated['footer_trust_patients'] = $request->boolean('footer_trust_patients');
+
+            if ($request->boolean('spotlight_remove_image')) {
+                if ($settings->spotlight_image) {
+                    Storage::disk('public')->delete($settings->spotlight_image);
+                }
+                $validated['spotlight_image'] = null;
+            }
+            if ($request->hasFile('spotlight_image')) {
+                if ($settings->spotlight_image) {
+                    Storage::disk('public')->delete($settings->spotlight_image);
+                }
+                $validated['spotlight_image'] = $request->file('spotlight_image')->store('website', 'public');
+            }
+            unset($validated['spotlight_remove_image'], $validated['trust_strip'], $validated['about_why']);
             $validated['facebook_url'] = $request->input('facebook_url') ?: null;
             $validated['twitter_url'] = $request->input('twitter_url') ?: null;
             $validated['instagram_url'] = $request->input('instagram_url') ?: null;
@@ -105,6 +150,10 @@ class WebsiteSettingController extends Controller
 
         $settings->update($validated);
 
+        if ($tab === 'branding' && ! empty($validated['brand_name'] ?? null) && currentLabId()) {
+            Lab::where('id', currentLabId())->update(['name' => $validated['brand_name']]);
+        }
+
         return redirect()->route('admin.settings.index', ['tab' => $tab])
             ->with('success', 'Settings updated successfully.');
     }
@@ -116,10 +165,7 @@ class WebsiteSettingController extends Controller
         switch ($tab) {
             case 'general':
                 $rules = [
-                    'brand_name' => 'nullable|string|max:255',
                     'domain' => 'nullable|string|max:255',
-                    'logo' => 'nullable|image|max:2048',
-                    'favicon' => 'nullable|image|max:512',
                     'banner_images.*' => 'nullable|file|mimetypes:image/jpeg,image/png,image/gif,image/webp,image/bmp,image/svg+xml,video/mp4,video/quicktime,video/x-msvideo,video/webm|max:51200',
                     'description' => 'nullable|string|max:1000',
                 ];
@@ -127,16 +173,11 @@ class WebsiteSettingController extends Controller
 
             case 'branding':
                 $rules = [
+                    'brand_name' => 'nullable|string|max:255',
+                    'logo' => 'nullable|image|max:2048',
+                    'favicon' => 'nullable|image|max:512',
                     'primary_color' => 'nullable|string|max:7',
-                    'hero_title' => 'nullable|string|max:255',
-                    'hero_subtitle' => 'nullable|string',
-                    'hero_image' => 'nullable|image|max:5120',
-                    'footer_text' => 'nullable|string',
-                ];
-                break;
-
-            case 'contact':
-                $rules = [
+                    'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                     'phone' => 'nullable|string|max:20',
                     'email' => 'nullable|email|max:255',
                     'contact_phone' => 'nullable|string|max:20',
@@ -198,6 +239,18 @@ class WebsiteSettingController extends Controller
 
             case 'cms':
                 $rules = [
+                    'hero_title' => 'nullable|string|max:255',
+                    'hero_subtitle' => 'nullable|string',
+                    'hero_image' => 'nullable|image|max:5120',
+                    'footer_text' => 'nullable|string',
+                    'footer_tagline' => 'nullable|string|max:500',
+                    'pre_footer_heading' => 'nullable|string|max:255',
+                    'pre_footer_subtitle' => 'nullable|string|max:500',
+                    'pre_footer_cta_enabled' => 'nullable|boolean',
+                    'footer_show_trust_badges' => 'nullable|boolean',
+                    'footer_trust_nabl' => 'nullable|boolean',
+                    'footer_trust_iso' => 'nullable|boolean',
+                    'footer_trust_patients' => 'nullable|boolean',
                     'header_content' => 'nullable|string',
                     'footer_content' => 'nullable|string',
                     'content_after_banner' => 'nullable|string',
@@ -221,6 +274,39 @@ class WebsiteSettingController extends Controller
                     'og_image' => 'nullable|image|max:2048',
                     'show_promos_section' => 'nullable|boolean',
                     'promos_heading' => 'nullable|string|max:255',
+                    'promos_subtitle' => 'nullable|string|max:500',
+                    'promos_today_strip_enabled' => 'nullable|boolean',
+                    'promos_today_heading' => 'nullable|string|max:255',
+                    'promos_today_subtitle' => 'nullable|string|max:500',
+                    'trust_strip_enabled' => 'nullable|boolean',
+                    'trust_strip' => 'nullable|array',
+                    'trust_strip.*.label' => 'nullable|string|max:120',
+                    'trust_strip.*.url' => 'nullable|string|max:500',
+                    'trust_strip.*.image_keep' => 'nullable|string|max:500',
+                    'trust_strip.*.image' => 'nullable|image|max:2048',
+                    'hero_cta_primary_label' => 'nullable|string|max:120',
+                    'hero_cta_primary_url' => 'nullable|string|max:500',
+                    'hero_cta_secondary_label' => 'nullable|string|max:120',
+                    'hero_cta_secondary_url' => 'nullable|string|max:500',
+                    'hero_cta_tertiary_label' => 'nullable|string|max:120',
+                    'hero_cta_tertiary_url' => 'nullable|string|max:500',
+                    'spotlight_enabled' => 'nullable|boolean',
+                    'spotlight_name' => 'nullable|string|max:255',
+                    'spotlight_credentials' => 'nullable|string|max:255',
+                    'spotlight_tagline' => 'nullable|string|max:500',
+                    'spotlight_experience' => 'nullable|string|max:255',
+                    'spotlight_image' => 'nullable|image|max:2048',
+                    'spotlight_remove_image' => 'nullable|boolean',
+                    'about_intro' => 'nullable|string',
+                    'about_why' => 'nullable|array',
+                    'about_why.*.title' => 'nullable|string|max:120',
+                    'about_why.*.body' => 'nullable|string|max:500',
+                    'about_stat_tests' => 'nullable|string|max:80',
+                    'about_stat_patients' => 'nullable|string|max:80',
+                    'about_stat_years' => 'nullable|string|max:80',
+                    'about_working_hours' => 'nullable|string|max:2000',
+                    'about_team_trust_line' => 'nullable|string|max:500',
+                    'contact_working_hours' => 'nullable|string|max:2000',
                     'facebook_url' => 'nullable|url|max:500',
                     'twitter_url' => 'nullable|url|max:500',
                     'instagram_url' => 'nullable|url|max:500',
@@ -285,14 +371,14 @@ class WebsiteSettingController extends Controller
     protected function handleBannerImages(Request $request, WebsiteSetting $settings): array
     {
         $bannerImages = $settings->banner_images ?? [];
-        
+
         // Handle new banner uploads
         if ($request->hasFile('banner_images')) {
             foreach ($request->file('banner_images') as $file) {
                 $bannerImages[] = $file->store('website/banners', 'public');
             }
         }
-        
+
         // Handle banner deletions
         if ($request->has('delete_banners')) {
             $deleteIndexes = $request->delete_banners;
@@ -304,7 +390,7 @@ class WebsiteSettingController extends Controller
             }
             $bannerImages = array_values($bannerImages); // Re-index array
         }
-        
+
         return $bannerImages;
     }
 
@@ -312,15 +398,96 @@ class WebsiteSettingController extends Controller
     {
         $settings = WebsiteSetting::getForCurrentLab();
         $bannerImages = $settings->banner_images ?? [];
-        
+
         if (isset($bannerImages[$index])) {
             Storage::disk('public')->delete($bannerImages[$index]);
             unset($bannerImages[$index]);
             $bannerImages = array_values($bannerImages);
             $settings->update(['banner_images' => $bannerImages]);
         }
-        
+
         return redirect()->route('admin.settings.index', ['tab' => 'general'])
             ->with('success', 'Banner image deleted successfully.');
+    }
+
+    /**
+     * @return list<array{label: string, url: string, image?: string}>
+     */
+    protected function mergeTrustStripItemsFromRequest(Request $request, WebsiteSetting $settings): array
+    {
+        $existing = $settings->trust_strip_items ?? [];
+        $oldImages = collect(is_array($existing) ? $existing : [])->pluck('image')->filter()->all();
+
+        $rows = $request->input('trust_strip', []);
+        if (! is_array($rows)) {
+            $rows = [];
+        }
+
+        $items = [];
+        foreach ($rows as $i => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $label = trim((string) ($row['label'] ?? ''));
+            if ($label === '') {
+                continue;
+            }
+            if (count($items) >= 8) {
+                break;
+            }
+            $item = [
+                'label' => $label,
+                'url' => trim((string) ($row['url'] ?? '')),
+            ];
+            $file = $request->file("trust_strip.$i.image");
+            if ($file && $file->isValid()) {
+                if (! empty($row['image_keep'])) {
+                    Storage::disk('public')->delete($row['image_keep']);
+                }
+                $item['image'] = $file->store('website/trust', 'public');
+            } elseif (! empty($row['image_keep'])) {
+                $item['image'] = $row['image_keep'];
+            }
+            $items[] = $item;
+        }
+
+        $newImages = collect($items)->pluck('image')->filter()->all();
+        foreach ($oldImages as $path) {
+            if ($path && ! in_array($path, $newImages, true)) {
+                Storage::disk('public')->delete($path);
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    protected function mergeAboutWhyCardsFromRequest(Request $request): array
+    {
+        $rows = $request->input('about_why', []);
+        if (! is_array($rows)) {
+            return [];
+        }
+        $items = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $items[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+            if (count($items) >= 6) {
+                break;
+            }
+        }
+
+        return $items;
     }
 }

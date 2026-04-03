@@ -24,6 +24,10 @@
             <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                 <x-form-input label="Link URL (optional)" name="link" type="text" value="{{ old('link', $promo->link) }}" />
                 <div>
+                    <label for="valid_from" class="block text-sm font-medium text-gray-700 mb-2">Valid from (optional)</label>
+                    <input type="date" name="valid_from" id="valid_from" value="{{ old('valid_from', $promo->valid_from?->format('Y-m-d')) }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                <div>
                     <label for="valid_until" class="block text-sm font-medium text-gray-700 mb-2">Valid until (optional)</label>
                     <input type="date" name="valid_until" id="valid_until" value="{{ old('valid_until', $promo->valid_until?->format('Y-m-d')) }}" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                 </div>

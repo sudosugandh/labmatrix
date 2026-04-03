@@ -24,7 +24,7 @@
                     <span class="rounded-full px-2.5 py-0.5 bg-emerald-500/30 text-emerald-100 ring-1 ring-emerald-400/40">2 · Your reports</span>
                 </nav>
                 <h1 class="font-display text-2xl sm:text-3xl font-bold text-white tracking-tight">Your reports</h1>
-                <p class="mt-2 text-slate-300 text-sm max-w-xl">Download PDFs or email yourself a secure link for any report marked ready.</p>
+                <p class="mt-2 text-slate-300 text-sm max-w-xl">Download PDFs when ready, and track each test order’s progress below.</p>
             </div>
             <a href="{{ route('public.reports.search') }}" class="inline-flex items-center justify-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/15 transition shrink-0">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
@@ -54,19 +54,85 @@
             </div>
         @endif
 
-        @if(session('error'))
+        @if(!empty($error ?? null))
             <div class="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm" role="alert">
                 <p class="font-medium text-amber-950">No account found for this number</p>
-                <p class="mt-1 text-sm text-amber-900/90">{{ session('error') }}</p>
+                <p class="mt-1 text-sm text-amber-900/90">{{ $error }}</p>
                 <p class="mt-3 text-sm text-amber-800">Please check the number and try again, or contact us if you need help.</p>
                 <div class="mt-4 flex flex-wrap gap-3">
                     <a href="{{ route('public.reports.search') }}" class="inline-flex items-center px-4 py-2 rounded-xl font-semibold text-white text-sm shadow-sm transition hover:opacity-95" style="background-color: var(--primary-color);">Try again</a>
+                    <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Book a test</a>
                     <a href="{{ url('/contact') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Contact us</a>
                 </div>
             </div>
         @endif
 
+        @if(isset($patient) && isset($orders) && $orders->isNotEmpty())
+            <div class="mb-8 rounded-2xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
+                <div class="px-5 sm:px-6 py-4 border-b border-slate-100 bg-slate-50/80">
+                    <h2 class="font-display text-lg font-semibold text-slate-900">Your tests &amp; order status</h2>
+                    <p class="mt-1 text-sm text-slate-600">Progress for each order linked to your phone. When a report is released, you’ll also see it under <span class="font-medium text-slate-800">Ready to download</span> below.</p>
+                </div>
+                <div class="md:hidden divide-y divide-slate-100">
+                    @foreach($orders as $order)
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-start justify-between gap-2">
+                                <span class="font-mono text-sm font-semibold text-slate-800 tabular-nums">Order #{{ $order->id }}</span>
+                                <span class="text-xs text-slate-500 tabular-nums shrink-0">{{ $order->updated_at->format('M j, Y') }}</span>
+                            </div>
+                            <p class="text-sm font-medium text-slate-900 leading-snug">{{ $order->test?->name ?? $order->package?->name ?? '—' }}</p>
+                            <p class="text-sm text-slate-600 leading-relaxed">{{ $order->publicStatusLine() }}</p>
+                            <div class="pt-1">
+                                @if($order->report && $order->report->workflow_status === 'released' && $order->report->status === 'ready')
+                                    <a href="{{ route('public.reports.download', $order->report->id) }}" class="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl font-semibold text-sm text-white px-4 transition hover:brightness-110" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, #1e293b) 100%);">
+                                        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                        Download PDF
+                                    </a>
+                                @else
+                                    <p class="text-xs text-slate-400 text-center py-2 rounded-lg bg-slate-50 border border-slate-100">PDF not ready yet — check back after the lab releases your report.</p>
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="min-w-full divide-y divide-slate-200 text-sm">
+                        <thead class="bg-slate-50/90">
+                            <tr>
+                                <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Order</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Test / package</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Last update</th>
+                                <th scope="col" class="px-4 py-3.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Status</th>
+                                <th scope="col" class="px-4 py-3.5 text-right text-xs font-semibold uppercase tracking-wide text-slate-600">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($orders as $order)
+                                <tr class="hover:bg-slate-50/60">
+                                    <td class="px-4 py-3.5 font-mono font-semibold text-slate-800 tabular-nums">#{{ $order->id }}</td>
+                                    <td class="px-4 py-3.5 text-slate-800">{{ $order->test?->name ?? $order->package?->name ?? '—' }}</td>
+                                    <td class="px-4 py-3.5 text-slate-600 tabular-nums whitespace-nowrap">{{ $order->updated_at->format('M j, Y') }}</td>
+                                    <td class="px-4 py-3.5 text-slate-700 max-w-md">{{ $order->publicStatusLine() }}</td>
+                                    <td class="px-4 py-3.5 text-right whitespace-nowrap">
+                                        @if($order->report && $order->report->workflow_status === 'released' && $order->report->status === 'ready')
+                                            <a href="{{ route('public.reports.download', $order->report->id) }}" class="inline-flex items-center gap-1 font-semibold text-[color:var(--primary-color)] hover:underline">
+                                                <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                                                PDF
+                                            </a>
+                                        @else
+                                            <span class="text-slate-400">—</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        @endif
+
         @if(isset($reports) && $reports->count() > 0)
+            <h2 class="font-display text-lg font-semibold text-slate-900 mb-4">Ready to download</h2>
             <ul class="space-y-4">
                 @foreach($reports as $report)
                     @php
@@ -119,17 +185,25 @@
             @if(session('email_sent'))
                 <div class="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 px-4 py-3 text-sm">{{ session('email_sent') }}</div>
             @endif
-        @elseif(!session('error'))
+        @endif
+
+        @if(empty($error ?? null) && isset($patient) && isset($orders) && isset($reports) && $reports->isEmpty() && $orders->isEmpty())
             <div class="text-center py-14 rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 mb-4">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                 </div>
-                <p class="text-slate-900 font-semibold">No reports found</p>
-                <p class="mt-1 text-sm text-slate-500 max-w-md mx-auto">Reports appear here once the lab releases them. If you expected a report, please contact us.</p>
+                <p class="text-slate-900 font-semibold">No test orders found</p>
+                <p class="mt-1 text-sm text-slate-500 max-w-md mx-auto">We couldn’t find any lab orders for this phone number. If you recently booked, try the number you used when registering.</p>
                 <div class="mt-6 flex flex-wrap justify-center gap-3">
                     <a href="{{ route('public.reports.search') }}" class="inline-flex items-center px-4 py-2 rounded-xl font-semibold text-white text-sm shadow-sm" style="background-color: var(--primary-color);">Search again</a>
+                    <a href="{{ route('public.appointments.create') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Book a test</a>
                     <a href="{{ url('/contact') }}" class="inline-flex items-center px-4 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-slate-50">Contact us</a>
                 </div>
+            </div>
+        @elseif(empty($error ?? null) && isset($patient) && isset($orders) && isset($reports) && $reports->isEmpty() && $orders->isNotEmpty())
+            <div class="rounded-2xl border border-sky-100 bg-sky-50/80 px-5 py-4 text-sm text-sky-950">
+                <p class="font-medium">No downloadable PDFs yet</p>
+                <p class="mt-1 text-sky-900/90">Your order status is shown in the table above. PDFs will appear in this section when the lab releases each report.</p>
             </div>
         @endif
 
