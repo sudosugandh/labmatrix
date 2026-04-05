@@ -67,71 +67,122 @@
         </div>
     </section>
 
-    {{-- Section 3: Form --}}
-    <section class="py-14 md:py-16 bg-gradient-to-b from-slate-50 to-white border-b border-slate-100">
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="font-display text-2xl font-bold text-slate-900 text-center mb-3">Send us a message</h2>
-            <p class="text-center text-sm font-medium text-slate-700 mb-2 max-w-lg mx-auto">We usually respond within 1–2 hours</p>
-            <p class="text-center text-slate-500 text-sm mb-8">Leave your details and we will get back to you as soon as we can.</p>
-            <form method="post" action="{{ route('public.contact.store') }}" class="rounded-2xl border border-slate-200 bg-white p-6 md:p-9 shadow-sm space-y-5">
-                @csrf
-                <div>
-                    <label for="contact_name" class="block text-sm font-medium text-slate-700 mb-1.5">Name</label>
-                    <input type="text" name="name" id="contact_name" value="{{ old('name') }}" required maxlength="255" class="w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-3 text-slate-900 @error('name') border-red-400 @enderror" autocomplete="name">
-                    @error('name')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="contact_phone" class="block text-sm font-medium text-slate-700 mb-1.5">Phone</label>
-                    <input type="tel" name="phone" id="contact_phone" value="{{ old('phone') }}" required maxlength="80" class="w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-3 text-slate-900 @error('phone') border-red-400 @enderror" autocomplete="tel">
-                    @error('phone')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                </div>
-                <div>
-                    <label for="contact_message" class="block text-sm font-medium text-slate-700 mb-1.5">Message</label>
-                    <textarea name="message" id="contact_message" rows="5" required maxlength="5000" class="w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-3 text-slate-900 @error('message') border-red-400 @enderror" placeholder="How can we help?">{{ old('message') }}</textarea>
-                    @error('message')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
-                </div>
-                <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-base font-bold text-white shadow-lg transition-all hover:opacity-95" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e1b4b) 100%);">
-                    Submit message
-                </button>
-            </form>
-        </div>
-    </section>
-
-    {{-- Section 4 & 5: Details + hours --}}
-    <section class="py-14 md:py-16 bg-white border-b border-slate-100">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 class="font-display text-2xl font-bold text-slate-900 text-center mb-10">Contact details</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @if($cPhone !== '')
-                    <a href="{{ $telHref }}" class="flex flex-col p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:shadow-md transition-all">
-                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Phone</span>
-                        <span class="mt-2 text-xl font-semibold" style="color: var(--primary-color);">{{ $cPhone }}</span>
-                        <span class="mt-2 text-sm text-slate-600">Tap to call</span>
-                    </a>
-                @endif
-                @if($cEmail !== '')
-                    <a href="mailto:{{ $cEmail }}" class="flex flex-col p-6 rounded-2xl border border-slate-200 bg-slate-50/50 hover:border-slate-300 hover:shadow-md transition-all break-all">
-                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Email</span>
-                        <span class="mt-2 text-lg font-semibold text-slate-900">{{ $cEmail }}</span>
-                    </a>
-                @endif
-                @if($cAddress !== '')
-                    <div class="flex flex-col p-6 rounded-2xl border border-slate-200 bg-slate-50/50 md:col-span-2 lg:col-span-1">
-                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Address</span>
-                        <p class="mt-2 text-slate-700 leading-relaxed flex-1">{{ $cAddress }}</p>
-                    </div>
-                @endif
+    {{-- Form + contact details side by side --}}
+    <section class="relative py-14 md:py-20 bg-gradient-to-b from-slate-50 via-white to-slate-50 border-b border-slate-100 overflow-hidden">
+        <div class="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,color-mix(in_srgb,var(--primary-color)_12%,transparent),transparent)]" aria-hidden="true"></div>
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center lg:text-left mb-10 lg:mb-12">
+                <p class="text-sm font-semibold uppercase tracking-wider text-slate-500 mb-2">Message us</p>
+                <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">We’re here to help</h2>
+                <p class="mt-3 text-slate-600 text-base max-w-2xl mx-auto lg:mx-0">Write to us or use the details beside — we usually respond within <span class="font-semibold text-slate-800">1–2 hours</span>.</p>
             </div>
 
-            @if($hoursBlock !== '')
-                <div class="mt-10 p-6 md:p-8 rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white">
-                    <h3 class="font-display text-lg font-bold text-slate-900 mb-3 flex items-center gap-2">
-                        <svg class="w-5 h-5 shrink-0" style="color: var(--primary-color);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Working hours
-                    </h3>
-                    <div class="text-slate-700 text-sm leading-relaxed whitespace-pre-line">{{ $hoursBlock }}</div>
+            <div class="grid lg:grid-cols-2 gap-10 lg:gap-12 xl:gap-16 items-start">
+                {{-- Left: form --}}
+                <div>
+                    <div class="rounded-3xl bg-white p-6 sm:p-8 lg:p-10 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08),0_24px_48px_-12px_rgba(15,23,42,0.12)] border border-slate-100 ring-1 ring-slate-900/[0.04]">
+                        <div class="flex items-start gap-4 mb-8">
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 72%, #1e1b4b) 100%);">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                            </div>
+                            <div>
+                                <h3 class="font-display text-xl font-bold text-slate-900">Send us a message</h3>
+                                <p class="mt-1 text-sm text-slate-500 leading-relaxed">Leave your details and we’ll get back to you as soon as we can.</p>
+                            </div>
+                        </div>
+                        <form method="post" action="{{ route('public.contact.store') }}" class="space-y-5">
+                            @csrf
+                            <div>
+                                <label for="contact_name" class="block text-sm font-semibold text-slate-800 mb-2">Name</label>
+                                <input type="text" name="name" id="contact_name" value="{{ old('name') }}" required maxlength="255" class="w-full rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15 px-4 py-3.5 text-slate-900 transition-colors @error('name') border-red-400 ring-red-200 @enderror" autocomplete="name" placeholder="Your full name">
+                                @error('name')<p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="contact_phone" class="block text-sm font-semibold text-slate-800 mb-2">Phone</label>
+                                <input type="tel" name="phone" id="contact_phone" value="{{ old('phone') }}" required maxlength="80" class="w-full rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15 px-4 py-3.5 text-slate-900 transition-colors @error('phone') border-red-400 ring-red-200 @enderror" autocomplete="tel" placeholder="Mobile number">
+                                @error('phone')<p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <div>
+                                <label for="contact_message" class="block text-sm font-semibold text-slate-800 mb-2">Message</label>
+                                <textarea name="message" id="contact_message" rows="5" required maxlength="5000" class="w-full rounded-xl border-slate-200 bg-slate-50/50 shadow-sm focus:bg-white focus:border-violet-500 focus:ring-2 focus:ring-violet-500/15 px-4 py-3.5 text-slate-900 transition-colors resize-y min-h-[140px] @error('message') border-red-400 ring-red-200 @enderror" placeholder="How can we help?">{{ old('message') }}</textarea>
+                                @error('message')<p class="mt-1.5 text-sm text-red-600">{{ $message }}</p>@enderror
+                            </div>
+                            <button type="submit" class="w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-base font-bold text-white shadow-lg shadow-slate-900/10 transition-all hover:shadow-xl hover:brightness-[1.03] active:scale-[0.99]" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 76%, #1e1b4b) 100%);">
+                                <span>Submit message</span>
+                                <svg class="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                            </button>
+                        </form>
+                    </div>
                 </div>
-            @endif
+
+                {{-- Right: contact details + hours --}}
+                <div class="lg:sticky lg:top-28 space-y-6">
+                    <div class="rounded-3xl overflow-hidden shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08),0_20px_40px_-12px_rgba(15,23,42,0.14)] border border-slate-200/80 ring-1 ring-slate-900/[0.03] bg-white">
+                        <div class="relative overflow-hidden px-6 py-5 sm:px-8 sm:py-6 text-white">
+                            <div class="absolute inset-0 z-0" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 55%, #0f172a) 100%);" aria-hidden="true"></div>
+                            <div class="absolute inset-0 z-[1] opacity-25 bg-[radial-gradient(circle_at_100%_0%,white,transparent_55%)] pointer-events-none" aria-hidden="true"></div>
+                            <div class="relative z-10">
+                                <h3 class="font-display text-xl font-bold">Contact details</h3>
+                                <p class="mt-1 text-sm text-white/85">Reach us directly anytime</p>
+                            </div>
+                        </div>
+                        <div class="p-6 sm:p-8 space-y-1 bg-gradient-to-b from-white to-slate-50/80">
+                            @if($cPhone !== '')
+                                <a href="{{ $telHref }}" class="group flex gap-4 p-4 rounded-2xl hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all">
+                                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600 group-hover:scale-105 transition-transform" style="color: var(--primary-color); background: color-mix(in srgb, var(--primary-color) 12%, white);">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Phone</span>
+                                        <span class="mt-1 block text-lg font-bold text-slate-900 group-hover:underline decoration-2 underline-offset-2" style="text-decoration-color: color-mix(in srgb, var(--primary-color) 50%, transparent);">{{ $cPhone }}</span>
+                                        <span class="mt-0.5 text-sm text-slate-500">Tap to call</span>
+                                    </span>
+                                </a>
+                            @endif
+                            @if($cEmail !== '')
+                                <a href="mailto:{{ $cEmail }}" class="group flex gap-4 p-4 rounded-2xl hover:bg-white hover:shadow-md border border-transparent hover:border-slate-100 transition-all">
+                                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl group-hover:scale-105 transition-transform" style="color: var(--primary-color); background: color-mix(in srgb, var(--primary-color) 12%, white);">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Email</span>
+                                        <span class="mt-1 block text-base sm:text-lg font-semibold text-slate-900 break-all group-hover:underline">{{ $cEmail }}</span>
+                                    </span>
+                                </a>
+                            @endif
+                            @if($cAddress !== '')
+                                <div class="flex gap-4 p-4 rounded-2xl bg-slate-50/80 border border-slate-100">
+                                    <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-white text-slate-600 shadow-sm border border-slate-100" style="color: var(--primary-color);">
+                                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                                    </span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="text-xs font-bold uppercase tracking-wide text-slate-500">Address</span>
+                                        <p class="mt-1.5 text-slate-700 leading-relaxed">{{ $cAddress }}</p>
+                                    </span>
+                                </div>
+                            @endif
+                            @if($cPhone === '' && $cEmail === '' && $cAddress === '')
+                                <p class="text-sm text-slate-500 text-center py-6 px-2">Add phone, email, or address in <strong class="text-slate-700">Settings → Contact</strong> to show them here.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    @if($hoursBlock !== '')
+                        <div class="rounded-3xl border border-slate-200/90 bg-white p-6 sm:p-8 shadow-md shadow-slate-900/[0.04] ring-1 ring-slate-900/[0.03]">
+                            <div class="flex items-center gap-3 mb-4">
+                                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-white shadow-sm" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #312e81) 100%);">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                </span>
+                                <div>
+                                    <h3 class="font-display text-lg font-bold text-slate-900">Working hours</h3>
+                                    <p class="text-xs text-slate-500 font-medium">When we’re available</p>
+                                </div>
+                            </div>
+                            <div class="pl-0 sm:pl-14 text-slate-700 text-sm leading-relaxed whitespace-pre-line rounded-2xl bg-slate-50/90 border border-slate-100/80 px-4 py-4 sm:px-5 sm:py-4">{{ $hoursBlock }}</div>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </section>
 
