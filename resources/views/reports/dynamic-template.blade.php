@@ -341,6 +341,12 @@
             <div class="info-value">{{ $patient->phone }}</div>
         </div>
         @endif
+        @if(!empty(trim((string) ($patient->address ?? ''))))
+        <div class="info-row">
+            <div class="info-label">Address:</div>
+            <div class="info-value" style="white-space: pre-line;">{{ trim($patient->address) }}</div>
+        </div>
+        @endif
         @if($testOrder->doctor_name)
         <div class="info-row">
             <div class="info-label">Referring Doctor:</div>

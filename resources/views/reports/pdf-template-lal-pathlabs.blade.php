@@ -349,6 +349,9 @@
         <div class="patient-meta-col">
             <div class="meta-row"><span class="meta-label">Age :</span><span class="meta-value">{{ $patient->age ? $patient->age . ' Years' : 'N/A' }}</span></div>
             <div class="meta-row"><span class="meta-label">Gender :</span><span class="meta-value">{{ ucfirst($patient->gender ?? 'N/A') }}</span></div>
+            @if(!empty(trim((string) ($patient->address ?? ''))))
+            <div class="meta-row"><span class="meta-label">Address :</span><span class="meta-value" style="white-space: pre-line;">{{ trim($patient->address) }}</span></div>
+            @endif
             <div class="meta-row"><span class="meta-label">Reported :</span><span class="meta-value">{{ isset($report->released_at) && $report->released_at ? $report->released_at->format('d-M-Y H:i') : (isset($report->created_at) ? $report->created_at : now())->format('d-M-Y H:i') }}</span></div>
             <div class="meta-row"><span class="meta-label">Report Status :</span><span class="meta-value">{{ (isset($report->workflow_status) && $report->workflow_status === 'revised') ? 'Revised' : 'Final' }}</span></div>
             <div class="meta-row"><span class="meta-label">Processed at :</span><span class="meta-value">{{ $settings->address ?? $lab->address ?? '-' }}</span></div>

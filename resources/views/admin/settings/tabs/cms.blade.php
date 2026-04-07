@@ -300,6 +300,7 @@
             </div>
             <div>
                 <label for="about_working_hours" class="block text-sm font-medium text-slate-700 mb-2">Working hours (About page)</label>
+                <p class="text-xs text-slate-500 mb-1.5">If empty, <strong>Contact page</strong> working hours are shown on <code class="text-[10px] bg-slate-100 px-1 rounded">/about</code> when set.</p>
                 <textarea name="about_working_hours" id="about_working_hours" rows="4" class="block w-full rounded-xl border-slate-200 shadow-sm text-sm py-2.5" placeholder="Mon–Sat: 7:00 AM – 8:00 PM&#10;Sunday: Emergency only">{{ old('about_working_hours', $settings->about_working_hours ?? '') }}</textarea>
             </div>
             <div>

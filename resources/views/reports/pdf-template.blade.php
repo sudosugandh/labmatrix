@@ -289,10 +289,12 @@
             <div class="info-label">Email:</div>
             <div class="info-value">{{ $patient->email ?? 'N/A' }}</div>
         </div>
+        @if(!empty(trim((string) ($patient->address ?? ''))))
         <div class="info-row">
             <div class="info-label">Address:</div>
-            <div class="info-value">{{ $patient->address ?? 'N/A' }}</div>
+            <div class="info-value" style="white-space: pre-line;">{{ trim($patient->address) }}</div>
         </div>
+        @endif
         @if($testOrder->doctor)
         <div class="info-row">
             <div class="info-label">Ref. By:</div>

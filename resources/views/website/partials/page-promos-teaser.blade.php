@@ -18,19 +18,7 @@
                     $promoHref = $promo->link ? (str_starts_with($promo->link, 'http') ? $promo->link : url($promo->link)) : route('public.appointments.create');
                     $promoExternal = str_starts_with($promo->link ?? '', 'http');
                 @endphp
-                <article class="snap-start shrink-0 w-[min(100%,260px)] rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50/80 to-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                    <h3 class="font-display font-semibold text-slate-900 text-sm leading-snug mb-2 line-clamp-2">{{ $promo->title }}</h3>
-                    @if($promo->short_text)
-                        <p class="text-xs text-slate-600 line-clamp-2 flex-1 mb-3">{{ $promo->short_text }}</p>
-                    @endif
-                    @if($promo->valid_until)
-                        <span class="inline-flex w-fit text-xs font-semibold px-2 py-0.5 rounded-md bg-amber-50 text-amber-900 border border-amber-100/80">Ends {{ $promo->valid_until->format('M j') }}</span>
-                    @endif
-                    <a href="{{ $promoHref }}" @if($promoExternal) target="_blank" rel="noopener" @endif class="mt-3 inline-flex items-center gap-1 text-xs font-semibold" style="color: var(--primary-color);">
-                        Book now
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                    </a>
-                </article>
+                @include('website.partials.promo-offer-card', ['promo' => $promo, 'promoHref' => $promoHref, 'promoExternal' => $promoExternal, 'articleClass' => 'snap-start shrink-0 w-[min(100%,280px)]'])
             @endforeach
         </div>
     </div>

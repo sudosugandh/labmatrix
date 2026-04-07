@@ -43,6 +43,12 @@
                             <dt class="text-sm font-medium text-gray-500">Phone</dt>
                             <dd class="mt-1 text-sm font-semibold text-gray-900">{{ $report->patient->phone }}</dd>
                         </div>
+                        @if(!empty(trim((string) ($report->patient->address ?? ''))))
+                        <div class="md:col-span-2">
+                            <dt class="text-sm font-medium text-gray-500">Patient address</dt>
+                            <dd class="mt-1 text-sm font-semibold text-gray-900 whitespace-pre-line">{{ trim($report->patient->address) }}</dd>
+                        </div>
+                        @endif
                         <div>
                             <dt class="text-sm font-medium text-gray-500">Report Number</dt>
                             <dd class="mt-1 text-sm font-semibold text-gray-900">{{ $report->report_number ?? 'N/A' }}</dd>

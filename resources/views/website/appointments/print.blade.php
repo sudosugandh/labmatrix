@@ -169,6 +169,12 @@
                 <td class="v">{{ $appointment->patient->email }}</td>
             </tr>
         @endif
+        @if(!empty(trim((string) ($appointment->patient->address ?? ''))))
+            <tr>
+                <td class="k">{{ __('Address') }}</td>
+                <td class="v" style="white-space: pre-line;">{{ trim($appointment->patient->address) }}</td>
+            </tr>
+        @endif
         @if($appointment->patient->age)
             <tr>
                 <td class="k">{{ __('Age') }}</td>

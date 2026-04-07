@@ -7,10 +7,11 @@
             ? "{$brand} — precision diagnostics, dependable results, and care that puts patients first."
             : 'Precision diagnostics, dependable results, and care that puts patients first.';
         $whyCards = $settings->aboutWhyCardsForDisplay();
+        $whyRows = \App\Models\WebsiteSetting::chunkAboutWhyRows($whyCards);
         $stats = $settings->aboutStatsDisplay();
         $cPhone = trim((string) ($settings->contact_phone ?? '')) ?: trim((string) ($settings->phone ?? ''));
         $cAddress = trim((string) ($settings->address ?? ''));
-        $hoursRaw = trim((string) ($settings->about_working_hours ?? ''));
+        $hoursRaw = $settings->aboutWorkingHoursDisplay();
         $introHtml = trim((string) ($settings->about_intro ?? ''));
     @endphp
 
@@ -49,30 +50,43 @@
                 <h2 class="font-display text-3xl md:text-[2rem] font-bold text-slate-900 tracking-tight">Why choose us</h2>
                 <p class="mt-3 text-slate-600">Everything we do is designed to earn your trust — before, during, and after your test.</p>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
-                @foreach($whyCards as $idx => $card)
-                    @php
-                        $icons = [
-                            'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
-                            'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
-                            'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
-                            'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517L6 18.089V5a2 2 0 012-2h6a2 2 0 012 2v10z',
-                            'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
-                            'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-                        ];
-                        $d = $icons[$idx % count($icons)];
-                    @endphp
-                    <article class="group rounded-2xl border border-slate-200/90 bg-white p-6 md:p-7 shadow-sm hover:shadow-lg hover:border-slate-300/80 transition-all duration-300 flex flex-col">
-                        <span class="inline-flex h-12 w-12 items-center justify-center rounded-xl text-white mb-4 shadow-md" style="background: linear-gradient(135deg, var(--primary-color), color-mix(in srgb, var(--primary-color) 72%, #1e1b4b));">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $d }}"></path></svg>
-                        </span>
-                        <h3 class="font-display text-lg font-bold text-slate-900 mb-2">{{ $card['title'] }}</h3>
-                        @if($card['body'] !== '')
-                            <p class="text-slate-600 text-sm leading-relaxed flex-1">{{ $card['body'] }}</p>
-                        @endif
-                    </article>
-                @endforeach
-            </div>
+            @php
+                $icons = [
+                    'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z',
+                    'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z',
+                    'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+                    'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517L6 18.089V5a2 2 0 012-2h6a2 2 0 012 2v10z',
+                    'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z',
+                    'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+                ];
+                $flatIdx = 0;
+            @endphp
+            @foreach($whyRows as $rowIndex => $row)
+                @php
+                    $rowCount = count($row);
+                    $isLastRow = $rowIndex === count($whyRows) - 1;
+                    $isFiveLayout = count($whyCards) === 5 && $isLastRow && $rowCount === 2;
+                    $rowGridClass = match (true) {
+                        $rowCount === 2 && count($whyCards) === 4 => 'grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto',
+                        $rowCount === 2 && $isFiveLayout => 'grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 max-w-3xl mx-auto w-full',
+                        default => 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8',
+                    };
+                @endphp
+                <div class="{{ $rowGridClass }} {{ $rowIndex > 0 ? 'mt-6 md:mt-8' : '' }}">
+                    @foreach($row as $card)
+                        @php $d = $icons[$flatIdx % count($icons)]; $flatIdx++; @endphp
+                        <article class="group rounded-2xl border border-slate-200/90 bg-white p-6 md:p-7 shadow-sm hover:shadow-lg hover:border-slate-300/80 transition-all duration-300 flex flex-col h-full">
+                            <span class="inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-white mb-4 shadow-sm" style="background-color: var(--primary-color);">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $d }}"></path></svg>
+                            </span>
+                            <h3 class="font-display text-lg font-bold text-slate-900 mb-2">{{ $card['title'] }}</h3>
+                            @if($card['body'] !== '')
+                                <p class="text-slate-600 text-sm leading-relaxed flex-1">{{ $card['body'] }}</p>
+                            @endif
+                        </article>
+                    @endforeach
+                </div>
+            @endforeach
         </div>
     </section>
 
@@ -182,8 +196,8 @@
                         <div class="mt-2 text-slate-700 text-sm leading-relaxed whitespace-pre-line">{{ $hoursRaw }}</div>
                     </div>
                 @elseif($cPhone !== '' || $cAddress !== '')
-                    <div class="flex flex-col p-6 rounded-2xl bg-slate-100/80 border border-dashed border-slate-200 justify-center">
-                        <p class="text-sm text-slate-500">Add working hours in <strong class="text-slate-700">Settings → CMS → About page</strong> so patients know when to visit or call.</p>
+                    <div class="flex flex-col p-6 rounded-2xl bg-slate-100/80 border border-dashed border-slate-200 justify-center min-h-[140px]">
+                        <p class="text-sm text-slate-500">Add working hours under <strong class="text-slate-700">Settings → CMS → About page</strong> or <strong class="text-slate-700">Contact page</strong> so patients know when to visit or call.</p>
                     </div>
                 @endif
             </div>

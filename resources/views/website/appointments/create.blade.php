@@ -292,8 +292,8 @@
                     </div>
 
                     <div>
-                        <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age (Optional)</label>
-                        <input type="number" name="age" id="age" value="{{ old('age') }}" min="1" max="150"
+                        <label for="age" class="block text-sm font-medium text-gray-700 mb-2">Age <span class="text-red-600">*</span></label>
+                        <input type="number" name="age" id="age" value="{{ old('age') }}" min="1" max="150" required
                             placeholder="Enter your age"
                             class="block w-full booking-input @error('age') border-red-500 @enderror">
                         @error('age')
@@ -302,15 +302,26 @@
                     </div>
 
                     <div>
-                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender (Optional)</label>
-                        <select name="gender" id="gender"
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender <span class="text-red-600">*</span></label>
+                        <select name="gender" id="gender" required
                             class="block w-full booking-input @error('gender') border-red-500 @enderror">
-                            <option value="">Select Gender</option>
+                            <option value="">Select gender</option>
                             <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                             <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
                             <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
                         </select>
                         @error('gender')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address <span class="text-red-600">*</span></label>
+                        <textarea name="address" id="address" rows="3" maxlength="2000" required
+                            placeholder="e.g. 42, MG Road, Indiranagar, Bengaluru, Karnataka 560038"
+                            class="block w-full booking-input py-3 @error('address') border-red-500 @enderror">{{ old('address') }}</textarea>
+                        <p class="mt-1 text-xs text-slate-500">Used for home collection coordination and printed on PDF reports.</p>
+                        @error('address')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
                     </div>

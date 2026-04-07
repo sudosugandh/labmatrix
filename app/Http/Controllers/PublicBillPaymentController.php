@@ -204,8 +204,10 @@ class PublicBillPaymentController extends Controller
         try {
             // Classic Stripe PHP API (avoids StripeClient, which may be missing on some installs).
             \Stripe\Stripe::setApiKey($secret);
+            // INR Checkout: cards + UPI. Turn on UPI in Stripe Dashboard → Settings → Payment methods
+            // (India). No app change needed after that—Checkout shows both.
             $session = \Stripe\Checkout\Session::create([
-                'payment_method_types' => ['card'],
+                'payment_method_types' => ['card', 'upi'],
                 'line_items' => [[
                     'price_data' => [
                         'currency' => 'inr',

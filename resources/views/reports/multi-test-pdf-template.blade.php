@@ -248,6 +248,12 @@
             <div class="info-label">Phone:</div>
             <div class="info-value">{{ $patient->phone ?? 'N/A' }}</div>
         </div>
+        @if(!empty(trim((string) ($patient->address ?? ''))))
+        <div class="info-row">
+            <div class="info-label">Address:</div>
+            <div class="info-value" style="white-space: pre-line;">{{ trim($patient->address) }}</div>
+        </div>
+        @endif
         <div class="info-row">
             <div class="info-label">Report Date:</div>
             <div class="info-value">{{ $report->created_at->format('d-M-Y H:i') }}</div>

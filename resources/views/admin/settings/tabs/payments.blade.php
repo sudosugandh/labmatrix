@@ -42,6 +42,7 @@
                     <option value="razorpay" {{ old('payment_gateway', $settings->payment_gateway) === 'razorpay' ? 'selected' : '' }}>Razorpay</option>
                     <option value="paypal" {{ old('payment_gateway', $settings->payment_gateway) === 'paypal' ? 'selected' : '' }}>PayPal</option>
                 </select>
+                <p class="mt-2 text-xs text-slate-500 leading-relaxed"><strong class="font-medium text-slate-600">Stripe (INR)</strong>: This app requests <strong class="font-medium text-slate-600">card + UPI</strong> on Checkout. In <a href="https://dashboard.stripe.com/settings/payment_methods" target="_blank" rel="noopener" class="text-violet-600 hover:underline">Stripe Dashboard → Settings → Payment methods</a>, enable <strong class="font-medium text-slate-600">UPI</strong> for India—then patients see UPI next to card with no code change. <span class="text-slate-400">Razorpay includes UPI by default for INR.</span></p>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>

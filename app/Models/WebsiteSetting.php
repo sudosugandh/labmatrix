@@ -428,4 +428,51 @@ class WebsiteSetting extends Model
             'years' => trim((string) ($this->about_stat_years ?? '')) ?: '15+',
         ];
     }
+
+    /**
+     * Hours shown on /about — About-specific first, then Contact page hours.
+     */
+    public function aboutWorkingHoursDisplay(): string
+    {
+        $about = trim((string) ($this->about_working_hours ?? ''));
+        if ($about !== '') {
+            return $about;
+        }
+
+        return trim((string) ($this->contact_working_hours ?? ''));
+    }
+
+    /**
+     * Split "why choose us" cards into rows: 5 cards → 3 + 2 (centered); 4 → 2×2; 6 → 3 + 3.
+     *
+     * @param  list<array{title: string, body: string}>  $cards
+     * @return list<list<array{title: string, body: string}>>
+     */
+    public static function chunkAboutWhyRows(array $cards): array
+    {
+        $n = count($cards);
+        if ($n === 0) {
+            return [];
+        }
+        if ($n <= 3) {
+            return [$cards];
+        }
+        if ($n === 4) {
+            return [
+                array_slice($cards, 0, 2),
+                array_slice($cards, 2, 2),
+            ];
+        }
+        if ($n === 5) {
+            return [
+                array_slice($cards, 0, 3),
+                array_slice($cards, 3, 2),
+            ];
+        }
+
+        return [
+            array_slice($cards, 0, 3),
+            array_slice($cards, 3, 3),
+        ];
+    }
 }

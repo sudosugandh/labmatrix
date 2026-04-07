@@ -45,47 +45,56 @@
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-7">
                     @foreach($packages as $package)
-                        <article class="group relative flex flex-col bg-white rounded-2xl border border-slate-200/80 shadow-lg shadow-slate-200/40 overflow-hidden transition-all duration-300 hover:shadow-2xl hover:shadow-slate-300/30 hover:-translate-y-0.5 hover:border-slate-300/90">
-                            {{-- Compact visual header --}}
-                            <div class="relative h-24 sm:h-28 overflow-hidden shrink-0" style="background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color) 14%, #f8fafc) 0%, #f1f5f9 50%, color-mix(in srgb, var(--primary-color) 6%, #e2e8f0) 100%);">
-                                <div class="absolute inset-0 opacity-[0.06] bg-[url('data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 32 32\'%3E%3Ccircle cx=\'4\' cy=\'4\' r=\'1.5\' fill=\'%230f172a\'/%3E%3C/svg%3E')] bg-[length:32px_32px]"></div>
-                                <div class="absolute inset-0 bg-gradient-to-t from-white/30 to-transparent"></div>
-                                <div class="absolute top-3 right-3 w-9 h-9 rounded-xl bg-white/95 shadow-sm flex items-center justify-center text-slate-500 group-hover:text-slate-700 transition-colors" aria-hidden="true">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517L6 18.089V5a2 2 0 012-2h6a2 2 0 012 2v10z"/></svg>
-                                </div>
-                                @if($package->discount > 0)
-                                    <div class="absolute top-3 left-3">
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[11px] font-bold tracking-wide text-white shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e293b) 100%);">
-                                            {{ number_format($package->discount, 0) }}% off
-                                        </span>
+                        @php
+                            $rawDesc = trim(strip_tags((string) ($package->description ?? '')));
+                            $shortText = $rawDesc !== '' ? Str::limit($rawDesc, 110) : '';
+                            $isPlaceholder = $shortText !== '' && (
+                                strlen($shortText) < 18
+                                || preg_match('/^[a-z\s;]+$/i', $shortText)
+                                || preg_match('/hjkl|asdf|test@test|lorem/i', $shortText)
+                            );
+                        @endphp
+                        <article class="group relative flex flex-col bg-white rounded-2xl border border-slate-200/90 shadow-md shadow-slate-200/50 overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-slate-300/40 hover:-translate-y-0.5 hover:border-slate-300/80 ring-1 ring-slate-100/80">
+                            {{-- Header: flex row keeps badge + bookmark in-flow so nothing overlaps the title below --}}
+                            <div class="relative shrink-0 bg-gradient-to-r from-slate-100 via-sky-50/90 to-slate-100 border-b border-slate-200/60 px-4 pt-3 pb-3 sm:px-5">
+                                <div class="flex items-start justify-between gap-3 min-h-[2.25rem]">
+                                    <div class="flex-1 min-w-0 flex items-start">
+                                        @if($package->discount > 0)
+                                            <span class="inline-flex shrink-0 items-center rounded-full px-3 py-1 text-[11px] font-bold tracking-wide text-white shadow-sm" style="background-color: color-mix(in srgb, var(--primary-color) 88%, #0f172a);">
+                                                {{ number_format($package->discount, 0) }}% off
+                                            </span>
+                                        @endif
                                     </div>
-                                @endif
+                                    <div class="w-9 h-9 shrink-0 rounded-full bg-white border border-slate-200/90 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-slate-600 transition-colors" title="Save for later" aria-hidden="true">
+                                        <svg class="w-[18px] h-[18px]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/></svg>
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="flex flex-col flex-1 px-5 pt-4 pb-5">
-                                <h3 class="font-display text-lg font-bold text-slate-900 leading-snug mb-1.5 group-hover:text-slate-800 transition-colors">
+                            <div class="relative z-10 flex flex-col flex-1 px-5 pt-4 pb-5 bg-white">
+                                <h3 class="font-display text-lg font-bold text-slate-900 leading-snug mb-2 group-hover:text-slate-800 transition-colors break-words">
                                     {{ $package->name }}
                                 </h3>
 
-                                @if($package->description)
-                                    <p class="text-slate-600 text-sm leading-relaxed line-clamp-2 mb-4 min-h-[2.5rem]">{{ Str::limit(strip_tags($package->description), 100) }}</p>
+                                @if($shortText !== '' && ! $isPlaceholder)
+                                    <p class="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-4">{{ $shortText }}</p>
                                 @else
-                                    <p class="text-slate-400 text-sm italic mb-4 min-h-[2.5rem]">Full reporting &amp; expert review.</p>
+                                    <p class="text-slate-600 text-sm leading-relaxed line-clamp-3 mb-4">Curated tests in one bundle — clear pricing, single visit, and digital reports when ready.</p>
                                 @endif
 
-                                <div class="mt-auto pt-3 border-t border-slate-100">
-                                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-2">
+                                <div class="mt-auto pt-4 border-t border-slate-100">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.12em] mb-3" style="color: var(--primary-color);">
                                         {{ $package->tests_count }} {{ Str::plural('test', $package->tests_count) }} included
                                     </p>
                                     <div class="flex items-baseline gap-2 flex-wrap mb-4">
                                         @if($package->discount > 0)
-                                            <span class="text-xs text-slate-400 line-through">₹{{ number_format($package->price, 2) }}</span>
+                                            <span class="text-sm text-slate-400 line-through tabular-nums">₹{{ number_format($package->price, 2) }}</span>
                                         @endif
-                                        <span class="text-2xl font-bold tabular-nums tracking-tight" style="color: var(--primary-color);">₹{{ number_format($package->final_price, 2) }}</span>
+                                        <span class="text-xl sm:text-2xl font-bold tabular-nums tracking-tight" style="color: var(--primary-color);">₹{{ number_format($package->final_price, 2) }}</span>
                                     </div>
-                                    <a href="{{ route('public.packages.show', $package) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-semibold text-white shadow-md transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 85%, #1e1b4b) 100%); box-shadow: 0 4px 18px color-mix(in srgb, var(--primary-color) 32%, transparent);">
+                                    <a href="{{ route('public.packages.show', $package) }}" class="inline-flex w-full items-center justify-center gap-2 rounded-xl py-3 px-4 text-sm font-semibold text-white transition-all duration-200 hover:brightness-110 active:brightness-95 shadow-md" style="background-color: var(--primary-color); box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-color) 28%, transparent);">
                                         View details
-                                        <svg class="w-4 h-4 opacity-90 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                        <svg class="w-4 h-4 opacity-95 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                                     </a>
                                 </div>
                             </div>

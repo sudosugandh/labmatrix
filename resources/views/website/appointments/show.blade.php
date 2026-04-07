@@ -193,6 +193,12 @@
                                 <dd class="font-semibold text-slate-900 text-sm break-all mt-0.5">{{ $appointment->patient->email }}</dd>
                             </div>
                         @endif
+                        @if(!empty(trim((string) ($appointment->patient->address ?? ''))))
+                            <div class="rounded-xl border border-slate-200/80 bg-white px-4 py-3 shadow-sm">
+                                <dt class="text-xs font-medium uppercase tracking-wide text-slate-500">Address</dt>
+                                <dd class="font-semibold text-slate-900 text-sm whitespace-pre-line mt-0.5 leading-relaxed">{{ trim($appointment->patient->address) }}</dd>
+                            </div>
+                        @endif
                     </dl>
 
                     <div class="mt-6 p-4 rounded-xl border border-slate-200/80 bg-white/80">

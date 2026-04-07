@@ -171,9 +171,9 @@
                             Online payment is not configured for this lab. Please pay at the lab or contact them for other options.
                         </div>
                     @elseif($gateway === 'razorpay' && $razorpayKey)
-                        <button type="button" id="pay-razorpay" class="pay-btn-primary w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-4 text-white font-semibold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                            <span>Pay ₹{{ number_format($bill->due_amount, 2) }}</span>
-                            <span class="opacity-90 font-normal">with Razorpay</span>
+                        <button type="button" id="pay-razorpay" class="pay-btn-primary w-full inline-flex flex-col items-center justify-center gap-0.5 rounded-2xl px-5 py-4 text-white font-semibold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span class="inline-flex items-center gap-2"><span>Pay ₹{{ number_format($bill->due_amount, 2) }}</span><span class="opacity-90 font-normal">— UPI, card &amp; more</span></span>
+                            <span class="text-xs font-normal opacity-85">Google Pay, PhonePe, Paytm, BHIM…</span>
                         </button>
                         <form id="razorpay-verify-form" method="POST" action="{{ url('/pay-bill/verify-razorpay') }}" class="hidden">
                             @csrf
@@ -216,9 +216,9 @@
                             });
                         </script>
                     @elseif($gateway === 'stripe')
-                        <button type="button" id="pay-stripe" class="pay-btn-primary w-full inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-4 text-white font-semibold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                            <span>Pay ₹{{ number_format($bill->due_amount, 2) }}</span>
-                            <span class="opacity-90 font-normal">with Stripe</span>
+                        <button type="button" id="pay-stripe" class="pay-btn-primary w-full inline-flex flex-col items-center justify-center gap-0.5 rounded-2xl px-5 py-4 text-white font-semibold text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed">
+                            <span class="inline-flex items-center gap-2"><span>Pay ₹{{ number_format($bill->due_amount, 2) }}</span><span class="opacity-90 font-normal">with Stripe</span></span>
+                            <span class="text-xs font-normal opacity-85 text-center leading-snug">Card or UPI (Google Pay, PhonePe, Paytm…) — choose on the next screen</span>
                         </button>
                         <script>
                             document.getElementById('pay-stripe').addEventListener('click', function() {

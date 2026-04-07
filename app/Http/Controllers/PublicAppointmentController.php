@@ -104,8 +104,9 @@ class PublicAppointmentController extends Controller
             'name' => 'required|string|max:255',
             'phone' => 'required|string|max:20',
             'email' => 'nullable|email|max:255',
-            'age' => 'nullable|integer|min:1|max:150',
-            'gender' => 'nullable|in:male,female,other',
+            'address' => 'required|string|max:2000',
+            'age' => 'required|integer|min:1|max:150',
+            'gender' => 'required|in:male,female,other',
             'appointment_date' => 'required|date|after_or_equal:today',
             'package_id' => 'nullable|exists:test_packages,id',
             'test_ids' => 'nullable|array|max:100',
@@ -186,6 +187,9 @@ class PublicAppointmentController extends Controller
             'doctor_id.required_if' => 'Please select your name from the list.',
             'doctor_name.required_if' => 'Your name is required.',
             'doctor_phone.required_if' => 'Your phone number is required.',
+            'age.required' => 'Please enter your age.',
+            'gender.required' => 'Please select your gender.',
+            'address.required' => 'Please enter your address.',
         ]);
 
         $selectedTestIds = array_values(array_unique(array_filter(array_map('intval', $validated['test_ids'] ?? []))));
@@ -269,22 +273,25 @@ class PublicAppointmentController extends Controller
                 ->where('phone', $validated['phone'])
                 ->first();
 
+            $addressStored = trim((string) $validated['address']);
+
             if (! $patient) {
                 $patient = Patient::create([
                     'lab_id' => $labId,
                     'name' => $validated['name'],
                     'phone' => $validated['phone'],
                     'email' => $validated['email'] ?? null,
-                    'age' => $validated['age'] ?? null,
-                    'gender' => $validated['gender'] ?? null,
+                    'address' => $addressStored,
+                    'age' => $validated['age'],
+                    'gender' => $validated['gender'],
                 ]);
             } else {
-                // Update patient info if provided
                 $patient->update([
                     'name' => $validated['name'],
                     'email' => $validated['email'] ?? $patient->email,
-                    'age' => $validated['age'] ?? $patient->age,
-                    'gender' => $validated['gender'] ?? $patient->gender,
+                    'address' => $addressStored,
+                    'age' => $validated['age'],
+                    'gender' => $validated['gender'],
                 ]);
             }
 

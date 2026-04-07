@@ -137,8 +137,9 @@
                     @if(!empty($settings->promos_today_subtitle))
                         <p class="mt-1 text-sm text-slate-600">{{ $settings->promos_today_subtitle }}</p>
                     @endif
+                    <p class="mt-2 text-sm text-slate-500 max-w-xl">Tap a card to book with this offer — full details at checkout.</p>
                 </div>
-                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide">Live offers · dates apply automatically</p>
+                <p class="text-xs font-medium text-slate-500 uppercase tracking-wide shrink-0">Live offers · dates apply automatically</p>
             </div>
             <div class="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-thin -mx-4 px-4 md:mx-0 md:px-0">
                 @foreach($promos->take(8) as $promo)
@@ -146,23 +147,7 @@
                         $promoHref = $promo->link ? (str_starts_with($promo->link, 'http') ? $promo->link : url($promo->link)) : route('public.appointments.create');
                         $promoExternal = str_starts_with($promo->link ?? '', 'http');
                     @endphp
-                    <article class="snap-start shrink-0 w-[min(100%,280px)] rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                        <h3 class="font-display font-semibold text-slate-900 text-base leading-snug mb-2">{{ $promo->title }}</h3>
-                        @if($promo->short_text)
-                            <p class="text-sm text-slate-600 line-clamp-2 flex-1 mb-3">{{ $promo->short_text }}</p>
-                        @endif
-                        <div class="flex flex-wrap items-center gap-2 mt-auto">
-                            @if($promo->valid_until)
-                                <span class="inline-flex items-center text-xs font-semibold px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-100">Ends {{ $promo->valid_until->format('M j, Y') }}</span>
-                            @elseif($promo->valid_from)
-                                <span class="inline-flex text-xs text-slate-500">From {{ $promo->valid_from->format('M j') }}</span>
-                            @endif
-                        </div>
-                        <a href="{{ $promoHref }}" @if($promoExternal) target="_blank" rel="noopener" @endif class="mt-4 inline-flex items-center gap-1 text-sm font-semibold hover:gap-2 transition-all" style="color: var(--primary-color);">
-                            Book now
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </a>
-                    </article>
+                    @include('website.partials.promo-offer-card', ['promo' => $promo, 'promoHref' => $promoHref, 'promoExternal' => $promoExternal, 'articleClass' => 'snap-start shrink-0 w-[min(100%,300px)]'])
                 @endforeach
             </div>
         </div>
@@ -177,26 +162,10 @@
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 @foreach($promos->take(6) as $promo)
                     @php
-                        $shortText = $promo->short_text ?? '';
-                        $isPlaceholder = strlen($shortText) > 0 && (strlen($shortText) < 15 || preg_match('/^[a-z;]+$/i', $shortText) || str_contains($shortText, 'lorem'));
                         $promoHref = $promo->link ? (str_starts_with($promo->link, 'http') ? $promo->link : url($promo->link)) : route('public.appointments.create');
                         $promoExternal = str_starts_with($promo->link ?? '', 'http');
                     @endphp
-                    <article class="group relative bg-white rounded-2xl p-6 md:p-8 border border-slate-200/80 shadow-sm flex flex-col hover:shadow-lg transition-all border-l-4" style="border-left-color: var(--primary-color);">
-                        <h3 class="font-display text-lg font-semibold text-slate-900 mb-2">{{ $promo->title }}</h3>
-                        @if($shortText && !$isPlaceholder)
-                            <p class="text-slate-600 text-sm flex-1 mb-4 leading-relaxed">{{ $shortText }}</p>
-                        @elseif($shortText && $isPlaceholder)
-                            <p class="text-slate-500 text-sm flex-1 mb-4 leading-relaxed italic">Comprehensive health insights with clear reporting.</p>
-                        @endif
-                        @if($promo->valid_until)
-                            <p class="text-xs text-slate-500 mb-4 font-medium">Valid until {{ $promo->valid_until->format('M d, Y') }}</p>
-                        @endif
-                        <a href="{{ $promoHref }}" @if($promoExternal) target="_blank" rel="noopener" @endif class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold mt-auto w-fit transition-all bg-slate-100 hover:bg-slate-200/80" style="color: var(--primary-color);">
-                            Book now
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                        </a>
-                    </article>
+                    @include('website.partials.promo-offer-card', ['promo' => $promo, 'promoHref' => $promoHref, 'promoExternal' => $promoExternal, 'articleClass' => 'h-full'])
                 @endforeach
             </div>
         </div>

@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             LabSeeder::class,
             CmsSeeder::class,
             LabDataSeeder::class,
+            ReportTemplateSeeder::class,
             B2BPortalExampleSeeder::class,
         ]);
 
