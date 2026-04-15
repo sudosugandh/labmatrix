@@ -17,6 +17,7 @@ use App\Http\Controllers\FrontendPageController;
 use App\Http\Controllers\HealthCampController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\HomeVisitRequestController;
+use App\Http\Controllers\ImpersonationController;
 use App\Http\Controllers\InventoryAdjustmentController;
 use App\Http\Controllers\InventoryItemController;
 use App\Http\Controllers\InventoryReportController;
@@ -34,6 +35,7 @@ use App\Http\Controllers\PublicPackageController;
 use App\Http\Controllers\PublicReportController;
 use App\Http\Controllers\ReportBuilderController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\StripePlatformWebhookController;
 use App\Http\Controllers\SuperAdminController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\TestConsumableController;
@@ -46,6 +48,14 @@ use Illuminate\Support\Facades\Route;
 
 // Auth Routes (must be before dynamic slug route)
 require __DIR__.'/auth.php';
+
+Route::post('/webhooks/stripe-platform', StripePlatformWebhookController::class)
+    ->name('webhooks.stripe-platform');
+
+Route::middleware('auth')->group(function () {
+    Route::post('/impersonation/leave', [ImpersonationController::class, 'leave'])
+        ->name('impersonation.leave');
+});
 
 // Public Website Routes
 Route::get('/', [HomepageController::class, 'index'])->name('home');
@@ -188,6 +198,8 @@ Route::middleware(['auth', 'superadmin'])->prefix('super-admin')->name('super-ad
 
     // User Management
     Route::post('/labs/{lab}/users', [SuperAdminController::class, 'storeUser'])->name('labs.users.store');
+    Route::post('/labs/{lab}/users/{user}/impersonate', [ImpersonationController::class, 'start'])
+        ->name('labs.users.impersonate');
     Route::put('/labs/{lab}/users/{user}', [SuperAdminController::class, 'updateUser'])->name('labs.users.update');
     Route::delete('/labs/{lab}/users/{user}', [SuperAdminController::class, 'destroyUser'])->name('labs.users.destroy');
 

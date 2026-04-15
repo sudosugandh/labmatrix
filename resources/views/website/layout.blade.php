@@ -33,6 +33,8 @@
     @if($settings->og_image ?? null)
         <meta property="og:image" content="{{ config('app.url') }}/storage/{{ $settings->og_image }}">
     @endif
+    @stack('meta')
+    @include('website.partials.google-tag-manager', ['containerId' => $settings->publicGtmContainerIdForDisplay()])
 
     <link rel="preconnect" href="https://fonts.bunny.net">
     <link href="{{ $theme['fonts_href'] }}" rel="stylesheet" />
@@ -320,6 +322,7 @@
 </head>
 <body class="site-public font-sans antialiased min-h-screen" style="background: linear-gradient(180deg, var(--page-bg-start) 0%, var(--page-bg-end) 55%, #ffffff 100%);" x-data="{ navOpen: false }">
     <a href="#main-content" class="skip-to-main" onclick="document.getElementById('main-content')?.focus({preventScroll:true})">Skip to main content</a>
+    @include('website.partials.google-tag-manager-noscript', ['containerId' => $settings->publicGtmContainerIdForDisplay()])
     <!-- Page load loader (lab-themed) -->
     <div id="page-loader" class="page-loader" aria-hidden="true">
         <div class="relative flex flex-col items-center justify-center">

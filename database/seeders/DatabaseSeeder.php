@@ -26,11 +26,12 @@ class DatabaseSeeder extends Seeder
             LabSeeder::class,
             CmsSeeder::class,
             LabDataSeeder::class,
+            HomepageDemoSeeder::class,
             ReportTemplateSeeder::class,
             B2BPortalExampleSeeder::class,
         ]);
 
-        // Homepage vendor demo (trust strip, CTAs, spotlight, dated promos):
+        // Extra vendor landing polish (hero CTAs, spotlight, more promos):
         // php artisan db:seed --class=VendorLandingDemoSeeder
     }
 }

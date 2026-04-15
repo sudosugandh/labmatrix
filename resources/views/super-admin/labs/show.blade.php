@@ -109,6 +109,23 @@
         </div>
     </div>
 
+    @isset($planUsage)
+    <div class="rounded-xl border border-slate-200 bg-slate-50/80 p-5 shadow-sm">
+        <h3 class="text-sm font-semibold text-slate-900">Plan limits (enforced in the lab app)</h3>
+        <p class="mt-1 text-xs text-slate-600">Defaults follow lab level (small vs large). Clear override fields on the lab edit screen to use defaults again.</p>
+        <dl class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-4 text-sm">
+            <div>
+                <dt class="text-slate-500">Users</dt>
+                <dd class="font-semibold text-slate-900">{{ $planUsage['users_current'] }} / {{ $planUsage['users_max'] }}</dd>
+            </div>
+            <div>
+                <dt class="text-slate-500">Storage (approx.)</dt>
+                <dd class="font-semibold text-slate-900">{{ $planUsage['storage_mb_used'] }} / {{ $planUsage['storage_mb_max'] }} MB</dd>
+            </div>
+        </dl>
+    </div>
+    @endisset
+
     <!-- Change Lab Level -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-blue-500 to-cyan-600">
@@ -285,15 +302,23 @@
                                         </span>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <form method="POST" action="{{ route('super-admin.labs.users.destroy', [$lab, $user]) }}" 
-                                              class="inline" 
-                                              onsubmit="return confirm('Are you sure you want to delete this user?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="sa-icon-btn border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Delete user" aria-label="Delete user">
-                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </form>
+                                        <div class="flex flex-wrap items-center gap-2">
+                                            @if(! $user->isSuperAdmin())
+                                                <form method="POST" action="{{ route('super-admin.labs.users.impersonate', [$lab, $user]) }}" class="inline" onsubmit="return confirm('Sign in as this user for support? Session ends in 1 hour.');">
+                                                    @csrf
+                                                    <button type="submit" class="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-xs font-medium text-violet-800 hover:bg-violet-100" title="Impersonate (support)">Impersonate</button>
+                                                </form>
+                                            @endif
+                                            <form method="POST" action="{{ route('super-admin.labs.users.destroy', [$lab, $user]) }}" 
+                                                  class="inline" 
+                                                  onsubmit="return confirm('Are you sure you want to delete this user?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="sa-icon-btn border border-red-100 bg-red-50 text-red-600 hover:bg-red-100" title="Delete user" aria-label="Delete user">
+                                                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </form>
+                                        </div>
                                     </td>
                                 </tr>
                             @endforeach
@@ -361,7 +386,10 @@
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div class="px-6 py-4 bg-gradient-to-r from-green-500 to-emerald-600">
             <h3 class="text-lg font-semibold text-white">Feature Flags</h3>
-            <p class="text-sm text-green-100 mt-1">Enable or disable features for this lab</p>
+            <p class="text-sm text-green-100 mt-1">Platform-level toggles for this tenant. Lab staff still manage CMS and content in Admin → Settings.</p>
+            <p class="mt-3 max-w-3xl rounded-lg border border-white/20 bg-white/10 p-3 text-xs leading-relaxed text-green-50">
+                <span class="font-semibold text-white">Platform vs lab admin:</span> these toggles set what this tenant <em>may</em> use (kill‑switch, policy). The lab’s own admins still control website copy, promos, and CMS under <strong>Lab Settings</strong> — only intervene here for compliance or support.
+            </p>
         </div>
         <div class="p-6">
             <form method="POST" action="{{ route('super-admin.labs.features.update', $lab) }}" class="space-y-4">
@@ -582,6 +610,21 @@
                             value="{{ old('monthly_fee', $lab->monthly_fee) }}"
                             placeholder="0.00"
                             class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2">
+                    </div>
+                    <div>
+                        <label for="stripe_customer_id" class="block text-sm font-medium text-gray-700 mb-2">Stripe customer ID</label>
+                        <input type="text" name="stripe_customer_id" id="stripe_customer_id"
+                            value="{{ old('stripe_customer_id', $lab->stripe_customer_id) }}"
+                            placeholder="cus_…"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2 font-mono text-sm">
+                        <p class="mt-1 text-xs text-gray-500">Set when using Stripe Billing for this lab; webhooks update status when configured.</p>
+                    </div>
+                    <div>
+                        <label for="stripe_subscription_id" class="block text-sm font-medium text-gray-700 mb-2">Stripe subscription ID</label>
+                        <input type="text" name="stripe_subscription_id" id="stripe_subscription_id"
+                            value="{{ old('stripe_subscription_id', $lab->stripe_subscription_id) }}"
+                            placeholder="sub_…"
+                            class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-4 py-2 font-mono text-sm">
                     </div>
                     <div class="md:col-span-2">
                         <label for="billing_notes" class="block text-sm font-medium text-gray-700 mb-2">Billing Notes</label>

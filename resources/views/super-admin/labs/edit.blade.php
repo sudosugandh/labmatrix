@@ -76,6 +76,29 @@
                         @enderror
                     </div>
                 </div>
+
+                <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+                    <div>
+                        <label for="max_users" class="{{ $label }}">Max user accounts (override)</label>
+                        <input type="number" name="max_users" id="max_users" min="1" max="999999"
+                            value="{{ old('max_users', $lab->max_users) }}"
+                            placeholder="Leave blank to use level default (small: {{ \App\Models\Lab::defaultMaxUsersForLevel('small') }}, large: {{ \App\Models\Lab::defaultMaxUsersForLevel('large') }})"
+                            class="{{ $input }}">
+                        @error('max_users')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                    <div>
+                        <label for="max_storage_mb" class="{{ $label }}">Max storage (MB, override)</label>
+                        <input type="number" name="max_storage_mb" id="max_storage_mb" min="1" max="999999"
+                            value="{{ old('max_storage_mb', $lab->max_storage_mb) }}"
+                            placeholder="Leave blank for level default (small: {{ \App\Models\Lab::defaultMaxStorageMbForLevel('small') }}, large: {{ \App\Models\Lab::defaultMaxStorageMbForLevel('large') }})"
+                            class="{{ $input }}">
+                        @error('max_storage_mb')
+                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                        @enderror
+                    </div>
+                </div>
             </div>
 
             <div class="mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-slate-100 pt-6">

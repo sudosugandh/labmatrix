@@ -38,6 +38,15 @@
     </head>
     <body class="font-sans antialiased bg-gray-50">
         <div class="min-h-screen">
+            @if(session('impersonator_id'))
+                <div class="bg-amber-500 px-4 py-2.5 text-center text-sm text-amber-950 shadow-sm">
+                    <span class="font-medium">Platform support mode:</span> you are signed in as a lab user. Session ends automatically after one hour.
+                    <form method="POST" action="{{ route('impersonation.leave') }}" class="inline ml-3">
+                        @csrf
+                        <button type="submit" class="font-semibold underline decoration-amber-900/60 hover:decoration-amber-950">Exit impersonation</button>
+                    </form>
+                </div>
+            @endif
             @include('layouts.navigation')
 
             <!-- Mobile Menu Button -->
@@ -52,8 +61,9 @@
 
             <div class="flex min-h-0 w-full">
                 <!-- Modern Sidebar -->
-                <aside id="sidebar" class="admin-sidebar-panel fixed lg:sticky top-0 left-0 z-40 flex-shrink-0 w-64 h-screen shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain">
-                    <div class="p-6 pt-6">
+                {{-- h-screen alone is 100vh while this sits below the 64px nav: bottom links (e.g. Offers) sit below the fold. Use calc on lg + sticky top-16. --}}
+                <aside id="sidebar" class="admin-sidebar-panel fixed lg:sticky top-0 lg:top-16 left-0 z-40 flex-shrink-0 w-64 h-screen max-h-screen lg:h-[calc(100vh-4rem)] lg:max-h-[calc(100vh-4rem)] shadow-xl transform -translate-x-full lg:translate-x-0 transition-transform duration-300 ease-in-out overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+                    <div class="p-6 pt-6 pb-8">
                         {{-- Drawer: no logo, text only --}}
                         <p class="text-white font-semibold text-sm px-4 mb-4">{{ currentLab()?->name ?? config('app.name') }}</p>
                         <nav class="space-y-1">

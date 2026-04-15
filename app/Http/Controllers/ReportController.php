@@ -9,6 +9,7 @@ use App\Models\ReportTest;
 use App\Models\TestOrder;
 use App\Models\WebsiteSetting;
 use App\Services\AlertService;
+use App\Services\LabQuota;
 use App\Services\ReportTemplateService;
 use App\Services\WhatsAppService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -111,15 +112,27 @@ class ReportController extends Controller
             'status' => 'nullable|in:pending,ready',
         ]);
 
+        $lab = Lab::findOrFail(currentLabId());
+
         // Generate PDF or use uploaded file
         if ($request->boolean('generate_pdf')) {
             $filePath = $this->generatePdfReport($order, $validated);
+            try {
+                LabQuota::assertCanUseStorageBytes($lab, (int) Storage::disk('local')->size($filePath));
+            } catch (ValidationException $e) {
+                Storage::disk('local')->delete($filePath);
+
+                return redirect()->back()
+                    ->withErrors($e->errors())
+                    ->withInput();
+            }
         } else {
             if (! $request->hasFile('report_file')) {
                 return redirect()->back()
                     ->withErrors(['report_file' => 'Please upload a PDF file or generate one.'])
                     ->withInput();
             }
+            LabQuota::assertCanUseStorageBytes($lab, (int) $request->file('report_file')->getSize());
             $filePath = $request->file('report_file')->store('reports/'.currentLabId(), 'local');
         }
 
@@ -474,6 +487,16 @@ class ReportController extends Controller
         // Generate PDF for multi-test report
         $filePath = $this->generateMultiTestPdfReport($testOrders, $patient, $validated);
 
+        try {
+            LabQuota::assertCanUseStorageBytes(Lab::findOrFail($labId), (int) Storage::disk('local')->size($filePath));
+        } catch (ValidationException $e) {
+            Storage::disk('local')->delete($filePath);
+
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+        }
+
         $report = Report::create([
             'lab_id' => $labId,
             'patient_id' => $validated['patient_id'],
@@ -564,6 +587,8 @@ class ReportController extends Controller
 
             // Handle file upload
             if ($request->hasFile('doctor_signature')) {
+                LabQuota::assertCanUseStorageBytes(Lab::findOrFail(currentLabId()), (int) $request->file('doctor_signature')->getSize(), 'doctor_signature');
+
                 // Delete old signature if exists
                 if ($report->doctor_signature && Storage::disk('public')->exists($report->doctor_signature)) {
                     Storage::disk('public')->delete($report->doctor_signature);

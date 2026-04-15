@@ -14,17 +14,7 @@
 @if (! empty($flashToasts))
     <div
         x-cloak
-        x-data="{
-            items: @json($flashToasts),
-            dismiss(id) {
-                this.items = this.items.filter((t) => t.id !== id);
-            },
-            init() {
-                this.items.forEach((t) => {
-                    setTimeout(() => this.dismiss(t.id), 6500);
-                });
-            },
-        }"
+        x-data="createFlashToasts(@js($flashToasts))"
         class="fixed bottom-6 right-4 z-[100] flex w-[calc(100%-2rem)] max-w-md flex-col gap-3 pointer-events-none sm:right-8"
         aria-live="polite"
     >
@@ -53,7 +43,7 @@
                 <p class="min-w-0 flex-1 text-sm font-medium leading-snug pt-0.5" x-text="item.message"></p>
                 <button
                     type="button"
-                    @click="dismiss(item.id)"
+                    x-on:click="dismiss(item.id)"
                     class="shrink-0 rounded-lg p-1 text-current opacity-60 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-current/30"
                     aria-label="Dismiss"
                 >

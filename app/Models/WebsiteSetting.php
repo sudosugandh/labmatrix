@@ -71,6 +71,7 @@ class WebsiteSetting extends Model
         'online_reports_enabled',
         'notifications_enabled',
         'analytics_enabled',
+        'public_gtm_container_id',
         'printer_name',
         'printer_ip',
         'printer_port',
@@ -128,6 +129,15 @@ class WebsiteSetting extends Model
         'about_working_hours',
         'contact_working_hours',
         'about_team_trust_line',
+        'home_how_heading',
+        'home_how_subtitle',
+        'home_how_steps',
+        'home_why_heading',
+        'home_why_subtitle',
+        'home_why_cards',
+        'home_show_stats_strip',
+        'home_map_url',
+        'home_show_packages_teaser',
     ];
 
     protected $casts = [
@@ -161,6 +171,10 @@ class WebsiteSetting extends Model
         'footer_trust_nabl' => 'boolean',
         'footer_trust_iso' => 'boolean',
         'footer_trust_patients' => 'boolean',
+        'home_how_steps' => 'array',
+        'home_why_cards' => 'array',
+        'home_show_stats_strip' => 'boolean',
+        'home_show_packages_teaser' => 'boolean',
     ];
 
     public function lab(): BelongsTo
@@ -420,6 +434,19 @@ class WebsiteSetting extends Model
     /**
      * @return array{tests: string, patients: string, years: string}
      */
+    /**
+     * Sanitized GTM container ID for the public patient website (head + body snippets), or null.
+     */
+    public function publicGtmContainerIdForDisplay(): ?string
+    {
+        $id = trim((string) ($this->public_gtm_container_id ?? ''));
+        if ($id === '' || ! preg_match('/^GTM-[A-Z0-9]+$/i', $id)) {
+            return null;
+        }
+
+        return strtoupper($id);
+    }
+
     public function aboutStatsDisplay(): array
     {
         return [
@@ -427,6 +454,111 @@ class WebsiteSetting extends Model
             'patients' => trim((string) ($this->about_stat_patients ?? '')) ?: '5,000+',
             'years' => trim((string) ($this->about_stat_years ?? '')) ?: '15+',
         ];
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public static function defaultHomeHowSteps(): array
+    {
+        return [
+            ['title' => 'Book test online', 'body' => 'Choose your tests or package and pick a slot that suits you — no long queues.'],
+            ['title' => 'Visit lab or home collection', 'body' => 'Visit our centre for sample collection or request a trained phlebotomist at home.'],
+            ['title' => 'Get report online', 'body' => 'Access your report securely as soon as it is ready — view or download anytime.'],
+        ];
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public function resolvedHomeHowSteps(): array
+    {
+        $raw = $this->home_how_steps;
+        if (! is_array($raw) || count($raw) === 0) {
+            return self::defaultHomeHowSteps();
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+            if (count($out) >= 3) {
+                break;
+            }
+        }
+
+        return count($out) > 0 ? $out : self::defaultHomeHowSteps();
+    }
+
+    public function resolvedHomeHowHeading(): string
+    {
+        return trim((string) ($this->home_how_heading ?? '')) ?: 'How it works';
+    }
+
+    public function resolvedHomeHowSubtitle(): string
+    {
+        return trim((string) ($this->home_how_subtitle ?? '')) ?: 'Three simple steps from booking to your report.';
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public static function defaultHomeWhyCards(): array
+    {
+        return [
+            ['title' => 'Accurate reports', 'body' => 'Validated methods, internal QC, and clear reporting you and your doctor can rely on.'],
+            ['title' => 'Fast turnaround', 'body' => 'Efficient processing with same-day or next-day results for many routine tests.'],
+            ['title' => 'Home collection', 'body' => 'Trained phlebotomists visit you at home — convenient, hygienic, and on your schedule.'],
+            ['title' => 'Trusted lab', 'body' => 'Experienced team, modern equipment, and thousands of patients who choose us every year.'],
+        ];
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    public function resolvedHomeWhyCards(): array
+    {
+        $raw = $this->home_why_cards;
+        if (! is_array($raw) || count($raw) === 0) {
+            return self::defaultHomeWhyCards();
+        }
+        $out = [];
+        foreach ($raw as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $out[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+            if (count($out) >= 4) {
+                break;
+            }
+        }
+
+        return count($out) > 0 ? $out : self::defaultHomeWhyCards();
+    }
+
+    public function resolvedHomeWhyHeading(): string
+    {
+        return trim((string) ($this->home_why_heading ?? '')) ?: 'Why choose us';
+    }
+
+    public function resolvedHomeWhySubtitle(): string
+    {
+        return trim((string) ($this->home_why_subtitle ?? '')) ?: 'Quality, speed, and care — built into every test we run.';
     }
 
     /**

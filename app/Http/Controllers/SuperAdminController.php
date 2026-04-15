@@ -4,16 +4,21 @@ namespace App\Http\Controllers;
 
 use App\Models\Domain;
 use App\Models\Lab;
-use App\Models\SuperAdminAuditLog;
-use App\Models\User;
+use App\Models\LabSupportNote;
 use App\Models\Patient;
-use App\Models\TestOrder;
 use App\Models\Report;
-use Illuminate\Http\Request;
+use App\Models\SuperAdminAuditLog;
+use App\Models\TestOrder;
+use App\Models\User;
+use App\Models\WebsiteSetting;
+use App\Services\LabQuota;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\View\View;
+use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Str;
+use Illuminate\View\View;
 
 class SuperAdminController extends Controller
 {
@@ -32,8 +37,8 @@ class SuperAdminController extends Controller
             'total_reports' => Report::count(),
             'large_labs' => Lab::where('level', 'large')->count(),
             'small_labs' => Lab::where('level', 'small')->count(),
-            'total_domains' => \App\Models\Domain::count(),
-            'active_domains' => \App\Models\Domain::where('is_active', true)->count(),
+            'total_domains' => Domain::count(),
+            'active_domains' => Domain::where('is_active', true)->count(),
         ];
 
         // Recent labs with more details
@@ -307,16 +312,16 @@ class SuperAdminController extends Controller
             ->orderByDesc('created_at')
             ->get();
 
-        $filename = 'labs_export_' . date('Y-m-d_His') . '.csv';
-        
+        $filename = 'labs_export_'.date('Y-m-d_His').'.csv';
+
         $headers = [
             'Content-Type' => 'text/csv',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ];
 
-        $callback = function() use ($labs) {
+        $callback = function () use ($labs) {
             $file = fopen('php://output', 'w');
-            
+
             // Headers
             fputcsv($file, [
                 'ID', 'Name', 'Email', 'Phone', 'Address', 'Level', 'Lab Status',
@@ -324,7 +329,7 @@ class SuperAdminController extends Controller
                 'Users', 'Patients', 'Orders', 'Reports', 'Domains',
                 'Last Order At', 'Created At',
             ]);
-            
+
             // Data
             foreach ($labs as $lab) {
                 fputcsv($file, [
@@ -344,12 +349,12 @@ class SuperAdminController extends Controller
                     $lab->reports_count,
                     $lab->domains_count,
                     $lab->test_orders_max_created_at
-                        ? \Illuminate\Support\Carbon::parse($lab->test_orders_max_created_at)->format('Y-m-d H:i:s')
+                        ? Carbon::parse($lab->test_orders_max_created_at)->format('Y-m-d H:i:s')
                         : '',
                     $lab->created_at->format('Y-m-d H:i:s'),
                 ]);
             }
-            
+
             fclose($file);
         };
 
@@ -367,10 +372,10 @@ class SuperAdminController extends Controller
         // Search
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -414,7 +419,7 @@ class SuperAdminController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:labs,email',
+            'email' => 'required|email|max:255|unique:labs,email|unique:users,email',
             'phone' => 'required|string|max:255',
             'address' => 'required|string',
             'level' => 'required|in:small,large',
@@ -429,34 +434,43 @@ class SuperAdminController extends Controller
             'address' => $validated['address'],
             'level' => $validated['level'],
             'status' => $validated['status'] ?? 'active',
+            'max_users' => null,
+            'max_storage_mb' => null,
         ]);
 
         // Create default domain if provided
-        if (!empty($validated['domain'])) {
-            \App\Models\Domain::create([
+        if (! empty($validated['domain'])) {
+            Domain::create([
                 'lab_id' => $lab->id,
                 'domain' => $validated['domain'],
                 'is_active' => true,
             ]);
         }
 
-        // Create default admin user
+        // Default admin: random password (never shown); user sets password via email link
         $user = User::create([
-            'name' => $validated['name'] . ' Admin',
+            'name' => $validated['name'].' Admin',
             'email' => $validated['email'],
-            'password' => bcrypt('password'), // Default password, should be changed
+            'password' => Str::password(48),
             'lab_id' => $lab->id,
             'role' => 'admin',
         ]);
+
+        $resetStatus = Password::sendResetLink(['email' => $user->email]);
 
         SuperAdminAuditLog::record('lab.created', 'Created lab: '.$lab->name, $lab, [
             'level' => $lab->level,
             'initial_domain' => $validated['domain'] ?? null,
             'default_admin_user_id' => $user->id,
+            'password_reset_email' => $resetStatus === Password::RESET_LINK_SENT,
         ]);
 
+        $success = $resetStatus === Password::RESET_LINK_SENT
+            ? 'Lab created. A password setup link was sent to '.$validated['email'].'.'
+            : 'Lab created. The admin account is ready — configure mail (MAIL_*) and use “Forgot password” on the lab login page so they can set a password (setup email could not be sent).';
+
         return redirect()->route('super-admin.labs.show', $lab)
-            ->with('success', 'Lab created successfully. Default admin user created with email: ' . $validated['email'] . ' and password: password');
+            ->with('success', $success);
     }
 
     /**
@@ -465,17 +479,24 @@ class SuperAdminController extends Controller
     public function showLab(Lab $lab): View
     {
         $lab->loadCount(['users', 'domains', 'patients', 'testOrders', 'reports', 'supportNotes']);
-        $lab->load(['domains', 'users', 'supportNotes' => function($query) {
+        $lab->load(['domains', 'users', 'supportNotes' => function ($query) {
             $query->with('creator')->latest();
         }]);
 
         // Get website settings for this lab
-        $settings = \App\Models\WebsiteSetting::where('lab_id', $lab->id)->first();
-        
+        $settings = WebsiteSetting::where('lab_id', $lab->id)->first();
+
         // Get activity data
         $activityData = $this->getLabActivity($lab);
 
-        return view('super-admin.labs.show', compact('lab', 'settings', 'activityData'));
+        $planUsage = [
+            'users_current' => $lab->users()->count(),
+            'users_max' => $lab->effectiveMaxUsers(),
+            'storage_mb_used' => round($lab->estimatedStorageUsageBytes() / 1048576, 1),
+            'storage_mb_max' => $lab->effectiveMaxStorageMb(),
+        ];
+
+        return view('super-admin.labs.show', compact('lab', 'settings', 'activityData', 'planUsage'));
     }
 
     /**
@@ -533,7 +554,7 @@ class SuperAdminController extends Controller
      */
     public function updateLabSettings(Request $request, Lab $lab): RedirectResponse
     {
-        $settings = \App\Models\WebsiteSetting::firstOrCreate(
+        $settings = WebsiteSetting::firstOrCreate(
             ['lab_id' => $lab->id],
             [
                 'brand_name' => $lab->name,
@@ -568,7 +589,7 @@ class SuperAdminController extends Controller
      */
     public function updateLabFeatures(Request $request, Lab $lab): RedirectResponse
     {
-        $settings = \App\Models\WebsiteSetting::firstOrCreate(
+        $settings = WebsiteSetting::firstOrCreate(
             ['lab_id' => $lab->id],
             [
                 'brand_name' => $lab->name,
@@ -611,14 +632,20 @@ class SuperAdminController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:labs,email,' . $lab->id,
+            'email' => 'required|email|max:255|unique:labs,email,'.$lab->id,
             'phone' => 'required|string|max:255',
             'address' => 'required|string',
             'level' => 'required|in:small,large',
             'status' => 'nullable|in:active,suspended',
+            'max_users' => 'nullable|integer|min:1|max:999999',
+            'max_storage_mb' => 'nullable|integer|min:1|max:999999',
         ]);
 
-        $lab->update($validated);
+        $lab->update([
+            ...collect($validated)->except(['max_users', 'max_storage_mb'])->all(),
+            'max_users' => $request->filled('max_users') ? (int) $request->max_users : null,
+            'max_storage_mb' => $request->filled('max_storage_mb') ? (int) $request->max_storage_mb : null,
+        ]);
 
         SuperAdminAuditLog::record('lab.updated', 'Updated lab profile: '.$lab->name, $lab);
 
@@ -708,14 +735,14 @@ class SuperAdminController extends Controller
     /**
      * Update a domain.
      */
-    public function updateDomain(Request $request, Lab $lab, \App\Models\Domain $domain): RedirectResponse
+    public function updateDomain(Request $request, Lab $lab, Domain $domain): RedirectResponse
     {
         if ($domain->lab_id !== $lab->id) {
             abort(404);
         }
 
         $validated = $request->validate([
-            'domain' => 'required|string|max:255|unique:domains,domain,' . $domain->id,
+            'domain' => 'required|string|max:255|unique:domains,domain,'.$domain->id,
             'is_active' => 'nullable|boolean',
         ]);
 
@@ -730,7 +757,7 @@ class SuperAdminController extends Controller
     /**
      * Delete a domain.
      */
-    public function destroyDomain(Lab $lab, \App\Models\Domain $domain): RedirectResponse
+    public function destroyDomain(Lab $lab, Domain $domain): RedirectResponse
     {
         if ($domain->lab_id !== $lab->id) {
             abort(404);
@@ -755,6 +782,8 @@ class SuperAdminController extends Controller
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,staff',
         ]);
+
+        LabQuota::assertCanAddUser($lab);
 
         $newUser = User::create([
             'name' => $validated['name'],
@@ -781,7 +810,7 @@ class SuperAdminController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $user->id,
+            'email' => 'required|email|max:255|unique:users,email,'.$user->id,
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:admin,staff',
         ]);
@@ -792,7 +821,7 @@ class SuperAdminController extends Controller
             'role' => $validated['role'],
         ];
 
-        if (!empty($validated['password'])) {
+        if (! empty($validated['password'])) {
             $updateData['password'] = bcrypt($validated['password']);
         }
 
@@ -843,7 +872,12 @@ class SuperAdminController extends Controller
             'subscription_end_date' => 'nullable|date|after_or_equal:subscription_start_date',
             'monthly_fee' => 'nullable|numeric|min:0',
             'billing_notes' => 'nullable|string',
+            'stripe_customer_id' => 'nullable|string|max:255',
+            'stripe_subscription_id' => 'nullable|string|max:255',
         ]);
+
+        $validated['stripe_customer_id'] = $validated['stripe_customer_id'] ?: null;
+        $validated['stripe_subscription_id'] = $validated['stripe_subscription_id'] ?: null;
 
         $lab->update($validated);
 
@@ -867,7 +901,7 @@ class SuperAdminController extends Controller
             'is_important' => 'nullable|boolean',
         ]);
 
-        $note = \App\Models\LabSupportNote::create([
+        $note = LabSupportNote::create([
             'lab_id' => $lab->id,
             'created_by' => Auth::id(),
             'note' => $validated['note'],
@@ -884,7 +918,7 @@ class SuperAdminController extends Controller
     /**
      * Delete a support note.
      */
-    public function destroySupportNote(Lab $lab, \App\Models\LabSupportNote $note): RedirectResponse
+    public function destroySupportNote(Lab $lab, LabSupportNote $note): RedirectResponse
     {
         if ($note->lab_id !== $lab->id) {
             abort(404);
@@ -904,11 +938,11 @@ class SuperAdminController extends Controller
     {
         // Only load non-sensitive data
         $lab->load([
-            'users' => function($query) {
+            'users' => function ($query) {
                 $query->select('id', 'name', 'email', 'role', 'lab_id', 'created_at', 'updated_at');
             },
             'domains',
-            'supportNotes' => function($query) {
+            'supportNotes' => function ($query) {
                 $query->with('creator:id,name');
             },
         ]);
@@ -916,30 +950,30 @@ class SuperAdminController extends Controller
         // Get counts without loading actual data
         $lab->loadCount(['patients', 'testOrders', 'reports']);
 
-        $settings = \App\Models\WebsiteSetting::where('lab_id', $lab->id)->first();
+        $settings = WebsiteSetting::where('lab_id', $lab->id)->first();
 
-        $filename = 'lab_' . $lab->id . '_export_' . date('Y-m-d_His') . '.json';
-        
+        $filename = 'lab_'.$lab->id.'_export_'.date('Y-m-d_His').'.json';
+
         // Prepare lab data excluding sensitive fields
         $labData = $lab->only([
             'id', 'name', 'email', 'phone', 'address', 'level', 'status',
             'subscription_plan', 'subscription_status', 'subscription_start_date',
             'subscription_end_date', 'monthly_fee', 'billing_notes',
-            'created_at', 'updated_at'
+            'created_at', 'updated_at',
         ]);
-        
+
         $data = [
             'lab' => $labData,
             'settings' => $settings?->only([
                 'lab_id', 'site_name', 'site_description', 'contact_email',
                 'contact_phone', 'address', 'logo', 'favicon', 'primary_color',
-                'secondary_color', 'created_at', 'updated_at'
+                'secondary_color', 'created_at', 'updated_at',
             ]),
-            'users' => $lab->users->map(function($user) {
+            'users' => $lab->users->map(function ($user) {
                 return $user->only(['id', 'name', 'email', 'role', 'created_at', 'updated_at']);
             }),
             'domains' => $lab->domains->toArray(),
-            'support_notes' => $lab->supportNotes->map(function($note) {
+            'support_notes' => $lab->supportNotes->map(function ($note) {
                 return [
                     'id' => $note->id,
                     'note' => $note->note,
@@ -969,7 +1003,7 @@ class SuperAdminController extends Controller
 
         return response()->json($data, 200, [
             'Content-Type' => 'application/json',
-            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ], JSON_PRETTY_PRINT);
     }
 }

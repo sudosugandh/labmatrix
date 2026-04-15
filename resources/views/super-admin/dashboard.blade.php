@@ -6,6 +6,13 @@
 
 @section('content')
 <div class="space-y-8">
+    <div class="rounded-2xl border border-violet-200 bg-violet-50/90 p-5 text-sm text-slate-800 shadow-sm">
+        <p class="font-semibold text-slate-900">Platform console (Super Admin)</p>
+        <p class="mt-2 leading-relaxed text-slate-700">
+            You manage <strong>tenants</strong> (labs), domains, subscription and commercial fields, plan limits, and high‑risk overrides. Each lab’s team uses the normal <strong>Lab admin</strong> app for patients, tests, orders, reports, billing to patients, and day‑to‑day website/CMS content. Use this area for platform health, not for routine lab content editing.
+        </p>
+    </div>
+
     {{-- Primary KPI row (reference-style: value left, icon right) --}}
     <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
         <div class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm transition-shadow hover:shadow-md">

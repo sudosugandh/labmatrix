@@ -40,11 +40,98 @@
             </div>
             <div>
                 <label for="hero_image" class="block text-sm font-medium text-slate-700 mb-2">Hero image (optional fallback)</label>
+                <p class="text-xs text-slate-500 mb-2">Used on the homepage and on the branded 404 page. JPG, PNG, WebP, SVG, AVIF, or HEIC — max 5&nbsp;MB.</p>
                 <input type="file" name="hero_image" id="hero_image" accept="image/*" class="block w-full text-sm text-slate-600">
                 @if($settings->hero_image)
                     <p class="mt-2 text-xs text-slate-500">Current: <a href="{{ asset('storage/' . $settings->hero_image) }}" class="text-violet-600 hover:underline" target="_blank">view</a></p>
                 @endif
             </div>
+
+            @php
+                $homeHowRows = old('home_how');
+                if ($homeHowRows === null) {
+                    $storedHow = $settings->home_how_steps ?? [];
+                    $homeHowRows = [];
+                    for ($hi = 0; $hi < 3; $hi++) {
+                        $homeHowRows[$hi] = [
+                            'title' => $storedHow[$hi]['title'] ?? '',
+                            'body' => $storedHow[$hi]['body'] ?? '',
+                        ];
+                    }
+                }
+                $homeWhyRows = old('home_why');
+                if ($homeWhyRows === null) {
+                    $storedWhy = $settings->home_why_cards ?? [];
+                    $homeWhyRows = [];
+                    for ($wi = 0; $wi < 4; $wi++) {
+                        $homeWhyRows[$wi] = [
+                            'title' => $storedWhy[$wi]['title'] ?? '',
+                            'body' => $storedWhy[$wi]['body'] ?? '',
+                        ];
+                    }
+                }
+            @endphp
+            <div class="pt-6 border-t border-slate-200 space-y-6">
+                <div>
+                    <h4 class="text-sm font-semibold text-slate-900">Homepage — “How it works” &amp; “Why choose us”</h4>
+                    <p class="text-xs text-slate-500 mt-1">Leave rows empty to use built-in defaults. Stats reuse the About page numbers (About section below).</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="home_how_heading" class="block text-xs font-medium text-slate-600 mb-1">How it works — heading</label>
+                        <input type="text" name="home_how_heading" id="home_how_heading" value="{{ old('home_how_heading', $settings->home_how_heading ?? '') }}" placeholder="How it works" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label for="home_how_subtitle" class="block text-xs font-medium text-slate-600 mb-1">How it works — subtitle</label>
+                        <input type="text" name="home_how_subtitle" id="home_how_subtitle" value="{{ old('home_how_subtitle', $settings->home_how_subtitle ?? '') }}" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                </div>
+                <p class="text-xs font-medium text-slate-700">How it works — up to 3 steps</p>
+                <div class="space-y-3">
+                    @foreach(range(0, 2) as $hi)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                            <input type="text" name="home_how[{{ $hi }}][title]" value="{{ $homeHowRows[$hi]['title'] ?? '' }}" placeholder="Step title" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                            <input type="text" name="home_how[{{ $hi }}][body]" value="{{ $homeHowRows[$hi]['body'] ?? '' }}" placeholder="Short description" class="block w-full rounded-lg border-slate-200 text-sm py-2 md:col-span-2">
+                        </div>
+                    @endforeach
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                    <div>
+                        <label for="home_why_heading" class="block text-xs font-medium text-slate-600 mb-1">Why choose us — heading</label>
+                        <input type="text" name="home_why_heading" id="home_why_heading" value="{{ old('home_why_heading', $settings->home_why_heading ?? '') }}" placeholder="Why choose us" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                    <div>
+                        <label for="home_why_subtitle" class="block text-xs font-medium text-slate-600 mb-1">Why choose us — subtitle</label>
+                        <input type="text" name="home_why_subtitle" id="home_why_subtitle" value="{{ old('home_why_subtitle', $settings->home_why_subtitle ?? '') }}" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                    </div>
+                </div>
+                <p class="text-xs font-medium text-slate-700">Why choose us — up to 4 cards</p>
+                <div class="space-y-3">
+                    @foreach(range(0, 3) as $wi)
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-3 rounded-xl border border-slate-100 bg-slate-50/50">
+                            <input type="text" name="home_why[{{ $wi }}][title]" value="{{ $homeWhyRows[$wi]['title'] ?? '' }}" placeholder="Card title" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                            <textarea name="home_why[{{ $wi }}][body]" rows="2" placeholder="Card body" class="block w-full rounded-lg border-slate-200 text-sm py-2 md:col-span-2">{{ $homeWhyRows[$wi]['body'] ?? '' }}</textarea>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="flex flex-wrap gap-4 pt-2 border-t border-slate-100">
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="hidden" name="home_show_stats_strip" value="0">
+                        <input type="checkbox" name="home_show_stats_strip" value="1" {{ old('home_show_stats_strip', ($settings->home_show_stats_strip ?? false) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600">
+                        Show stats strip (uses About page numbers)
+                    </label>
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700">
+                        <input type="hidden" name="home_show_packages_teaser" value="0">
+                        <input type="checkbox" name="home_show_packages_teaser" value="1" {{ old('home_show_packages_teaser', ($settings->home_show_packages_teaser ?? false) ? '1' : '0') === '1' ? 'checked' : '' }} class="rounded border-slate-300 text-violet-600">
+                        Show packages teaser on homepage
+                    </label>
+                </div>
+                <div>
+                    <label for="home_map_url" class="block text-xs font-medium text-slate-600 mb-1">Map / directions link (optional)</label>
+                    <input type="text" name="home_map_url" id="home_map_url" value="{{ old('home_map_url', $settings->home_map_url ?? '') }}" placeholder="https://maps.google.com/... or Google Maps link" class="block w-full rounded-lg border-slate-200 text-sm py-2">
+                </div>
+            </div>
+
             <div>
                 <label for="footer_text" class="block text-sm font-medium text-slate-700 mb-2">Footer line (plain text)</label>
                 <textarea name="footer_text" id="footer_text" rows="2" class="block w-full rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 px-4 py-2.5" placeholder="Short tagline or copyright">{{ old('footer_text', $settings->footer_text ?? '') }}</textarea>
@@ -680,6 +767,11 @@
                     @if($settings->og_image ?? null)
                         <p class="mt-2 text-xs text-slate-500">Current: <img src="{{ \Illuminate\Support\Facades\Storage::url($settings->og_image) }}" alt="OG" class="inline h-8 w-auto rounded border border-slate-200"> Upload to replace.</p>
                     @endif
+                </div>
+                <div class="md:col-span-2 rounded-xl border border-slate-200 bg-slate-50/80 p-4">
+                    <label for="public_gtm_container_id" class="block text-sm font-medium text-slate-700 mb-1">Google Tag Manager (public website)</label>
+                    <input type="text" name="public_gtm_container_id" id="public_gtm_container_id" value="{{ old('public_gtm_container_id', $settings->public_gtm_container_id ?? '') }}" placeholder="GTM-XXXXXXX" autocomplete="off" class="block w-full max-w-md rounded-xl border-slate-200 shadow-sm focus:border-violet-500 focus:ring-violet-500/20 py-2.5 font-mono text-sm">
+                    <p class="mt-2 text-xs text-slate-600">Loads on the <strong>patient-facing</strong> site only (not the lab admin). Paste your container ID from Tag Manager. Leave empty to disable. This is separate from the “Analytics” toggle under Features (internal dashboard).</p>
                 </div>
             </div>
         </div>

@@ -30,9 +30,9 @@
     </div>
 </section>
 @else
-<section class="py-16 md:py-20 bg-white border-y border-slate-100">
+<section class="py-16 md:py-24 bg-gradient-to-b from-slate-50/70 to-white border-y border-slate-100">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex flex-col md:flex-row items-center gap-10 md:gap-14">
+        <div class="rounded-[2rem] border border-slate-200/80 bg-white/90 backdrop-blur-sm p-8 md:p-12 shadow-md shadow-slate-200/40 flex flex-col md:flex-row items-center gap-10 md:gap-14">
             <div class="shrink-0">
                 @if($settings->spotlight_image)
                     <img src="{{ \Illuminate\Support\Facades\Storage::url($settings->spotlight_image) }}" alt="{{ $settings->spotlight_name }}" class="w-40 h-40 md:w-48 md:h-48 rounded-3xl object-cover shadow-xl ring-4 ring-white" loading="lazy">
@@ -42,8 +42,8 @@
                     </div>
                 @endif
             </div>
-            <div class="text-center md:text-left">
-                <p class="text-sm font-semibold uppercase tracking-wider mb-2" style="color: var(--primary-color);">Meet our team</p>
+            <div class="text-center md:text-left flex-1 min-w-0">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style="color: var(--primary-color);">Meet our team</p>
                 <h2 class="font-display text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{{ $settings->spotlight_name }}</h2>
                 @if(!empty($settings->spotlight_credentials))
                     <p class="mt-2 text-lg text-slate-600 font-medium">{{ $settings->spotlight_credentials }}</p>

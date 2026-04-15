@@ -21,4 +21,23 @@ class Domain extends Model
     {
         return $this->belongsTo(Lab::class);
     }
+
+    /**
+     * Resolve tenant lab id from request host (matches DetectDomain lookup).
+     * Used as a fallback when rendering branded 404 so all tenant domains stay consistent.
+     */
+    public static function activeLabIdForHost(string $host): ?int
+    {
+        $hostWithoutPort = explode(':', $host, 2)[0];
+
+        $labId = static::query()
+            ->where(function ($query) use ($host, $hostWithoutPort) {
+                $query->where('domain', $host)
+                    ->orWhere('domain', $hostWithoutPort);
+            })
+            ->where('is_active', true)
+            ->value('lab_id');
+
+        return $labId !== null ? (int) $labId : null;
+    }
 }

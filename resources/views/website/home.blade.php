@@ -4,9 +4,62 @@
 @php
     $banners = $settings->banner_images ?? [];
     $hasBanners = count($banners) > 0;
+    $brandDisplay = trim((string) ($settings->brand_name ?? '')) ?: (currentLab()?->name ?? 'Our lab');
     $heroTitle = trim((string) ($settings->hero_title ?? '')) ?: 'Accurate Lab Tests. Fast Reports. Trusted Care.';
     $heroSubtitle = trim((string) ($settings->hero_subtitle ?? '')) ?: 'Book your test online and get reliable reports quickly.';
+    $homeHowSteps = $settings->resolvedHomeHowSteps();
+    $homeWhyCards = $settings->resolvedHomeWhyCards();
+    $homeStats = ($settings->home_show_stats_strip ?? false) ? $settings->aboutStatsDisplay() : null;
+    $ldMedical = [
+        '@context' => 'https://schema.org',
+        '@type' => 'MedicalClinic',
+        'name' => $settings->brand_name ?? currentLab()?->name ?? 'Lab',
+        'url' => url('/'),
+    ];
+    $ldPhone = trim((string) ($settings->contact_phone ?? $settings->phone ?? ''));
+    if ($ldPhone !== '') {
+        $ldMedical['telephone'] = $ldPhone;
+    }
+    $ldAddr = trim((string) ($settings->address ?? ''));
+    if ($ldAddr !== '') {
+        $ldMedical['address'] = ['@type' => 'PostalAddress', 'streetAddress' => $ldAddr];
+    }
+    if (! empty($settings->og_image)) {
+        $ldMedical['image'] = url(\Illuminate\Support\Facades\Storage::url($settings->og_image));
+    }
+    $hoursText = trim((string) ($settings->contact_working_hours ?? ''));
+    if ($hoursText === '') {
+        $hoursText = trim((string) ($settings->about_working_hours ?? ''));
+    }
+    if ($hoursText !== '') {
+        $ldMedical['openingHours'] = $hoursText;
+    }
+    $sameAs = array_values(array_filter([
+        trim((string) ($settings->facebook_url ?? '')),
+        trim((string) ($settings->twitter_url ?? '')),
+        trim((string) ($settings->instagram_url ?? '')),
+        trim((string) ($settings->linkedin_url ?? '')),
+        trim((string) ($settings->youtube_url ?? '')),
+    ]));
+    if (count($sameAs) > 0) {
+        $ldMedical['sameAs'] = $sameAs;
+    }
+    $ldGraph = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            $ldMedical,
+            [
+                '@type' => 'WebSite',
+                'name' => $settings->brand_name ?? currentLab()?->name ?? 'Lab',
+                'url' => url('/'),
+            ],
+        ],
+    ];
 @endphp
+@push('meta')
+<link rel="canonical" href="{{ url('/') }}" />
+<script type="application/ld+json">{!! json_encode($ldGraph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_AMP) !!}</script>
+@endpush
     {{-- Hero Section --}}
     <section class="relative w-full overflow-hidden bg-slate-800"
              x-data="{ current: 0, total: {{ count($banners) }} }"
@@ -30,7 +83,7 @@
                         @if($isVideo)
                             <video src="{{ $bannerUrl }}" class="w-full h-full object-cover object-center max-md:object-[center_25%]" autoplay muted loop playsinline aria-label="Banner {{ $index + 1 }}"></video>
                         @else
-                            <img src="{{ $bannerUrl }}" alt="" role="presentation" class="w-full h-full object-cover object-center max-md:object-[center_25%]" @if($index === 0) fetchpriority="high" @endif decoding="async">
+                            <img src="{{ $bannerUrl }}" alt="" role="presentation" class="w-full h-full object-cover object-center max-md:object-[center_25%]" @if($index === 0) fetchpriority="high" @else loading="lazy" @endif decoding="async">
                         @endif
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/45 to-slate-900/20 max-md:from-slate-950/95 max-md:via-slate-900/55"></div>
                     </div>
@@ -38,22 +91,23 @@
                 {{-- Copy + CTAs: bottom-weighted on small screens so faces/hero art stay visible; centered on md+ --}}
                 <div class="absolute inset-0 z-10 flex flex-col justify-end pt-14 pb-[max(2rem,env(safe-area-inset-bottom,0px))] px-4 sm:pt-16 sm:pb-10 sm:px-5 md:justify-center md:py-12 md:px-6">
                     <div class="text-center text-white max-w-4xl mx-auto w-full">
-                        <h1 class="font-display text-[1.7rem] leading-snug sm:text-3xl sm:leading-tight md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 md:mb-5 tracking-tight drop-shadow-lg [text-wrap:balance]">
+                        <p class="text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] text-white/85 mb-3 md:mb-4">{{ $brandDisplay }}</p>
+                        <h1 class="font-display text-[1.75rem] leading-tight sm:text-3xl sm:leading-tight md:text-5xl lg:text-[3.25rem] font-bold mb-3 sm:mb-4 md:mb-5 tracking-tight drop-shadow-lg [text-wrap:balance]">
                             {{ $heroTitle }}
                         </h1>
-                        <p class="text-base sm:text-lg md:text-xl lg:text-2xl text-slate-200 drop-shadow-md font-medium max-w-3xl mx-auto leading-snug [text-wrap:balance]">
+                        <p class="text-base sm:text-lg md:text-xl text-slate-100/95 drop-shadow-md font-medium max-w-2xl mx-auto leading-relaxed [text-wrap:balance]">
                             {{ $heroSubtitle }}
                         </p>
-                        <div class="mt-6 sm:mt-8 flex flex-wrap items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-lg mx-auto sm:max-w-none">
-                            <a href="{{ $settings->heroPrimaryUrl() }}" @if(str_starts_with($settings->heroPrimaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-1 sm:flex-initial min-h-[48px] items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold text-white shadow-xl transition-all active:scale-[0.98] sm:hover:scale-[1.02] sm:hover:shadow-2xl touch-manipulation" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, #1e1b4b) 100%); box-shadow: 0 4px 20px color-mix(in srgb, var(--primary-color) 40%, transparent);">
+                        <div class="mt-7 sm:mt-9 flex flex-wrap items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-lg mx-auto sm:max-w-none">
+                            <a href="{{ $settings->heroPrimaryUrl() }}" @if(str_starts_with($settings->heroPrimaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-1 sm:flex-initial min-h-[50px] items-center justify-center gap-2 px-6 sm:px-8 py-3.5 rounded-2xl text-sm sm:text-base font-bold text-white shadow-xl transition-all active:scale-[0.98] sm:hover:scale-[1.02] sm:hover:shadow-2xl touch-manipulation" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 80%, #1e1b4b) 100%); box-shadow: 0 4px 24px color-mix(in srgb, var(--primary-color) 45%, transparent);">
                                 {{ $settings->heroPrimaryLabel() }}
                                 <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                             </a>
-                            <a href="{{ $settings->heroSecondaryUrl() }}" @if(str_starts_with($settings->heroSecondaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-1 sm:flex-initial min-h-[48px] items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 transition-all touch-manipulation">
+                            <a href="{{ $settings->heroSecondaryUrl() }}" @if(str_starts_with($settings->heroSecondaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-1 sm:flex-initial min-h-[50px] items-center justify-center gap-2 px-6 sm:px-8 py-3.5 rounded-2xl text-sm sm:text-base font-semibold bg-white/12 backdrop-blur-md border-2 border-white/35 text-white hover:bg-white/20 transition-all touch-manipulation">
                                 {{ $settings->heroSecondaryLabel() }}
                             </a>
                             @if($settings->heroTertiaryLabel() && $settings->heroTertiaryUrl())
-                                <a href="{{ $settings->heroTertiaryUrl() }}" @if(str_starts_with($settings->heroTertiaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-[1_1_100%] sm:flex-initial min-h-[48px] sm:min-h-0 items-center justify-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl text-sm sm:text-base font-semibold bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25 transition-all touch-manipulation">
+                                <a href="{{ $settings->heroTertiaryUrl() }}" @if(str_starts_with($settings->heroTertiaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex flex-[1_1_100%] sm:flex-initial min-h-[50px] sm:min-h-0 items-center justify-center gap-2 px-6 sm:px-8 py-3.5 rounded-2xl text-sm sm:text-base font-semibold bg-white/12 backdrop-blur-md border-2 border-white/35 text-white hover:bg-white/20 transition-all touch-manipulation">
                                     {{ $settings->heroTertiaryLabel() }}
                                 </a>
                             @endif
@@ -74,20 +128,21 @@
                 @endif
             </div>
         @else
-            <div class="min-h-[20rem] md:min-h-[28rem] flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900">
-                <div class="text-center text-white px-4">
-                    <h1 class="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">{{ $heroTitle }}</h1>
-                    <p class="text-xl text-slate-300 max-w-2xl mx-auto">{{ $heroSubtitle }}</p>
-                    <div class="mt-8 flex flex-wrap items-center justify-center gap-4">
-                        <a href="{{ $settings->heroPrimaryUrl() }}" @if(str_starts_with($settings->heroPrimaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold text-white" style="background-color: var(--primary-color);">
+            <div class="min-h-[22rem] md:min-h-[30rem] flex items-center justify-center bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 px-4">
+                <div class="text-center text-white max-w-3xl mx-auto">
+                    <p class="text-xs sm:text-sm font-semibold uppercase tracking-[0.2em] text-white/80 mb-3">{{ $brandDisplay }}</p>
+                    <h1 class="font-display text-3xl md:text-5xl font-bold mb-4 tracking-tight leading-tight [text-wrap:balance]">{{ $heroTitle }}</h1>
+                    <p class="text-lg md:text-xl text-slate-200 max-w-2xl mx-auto leading-relaxed">{{ $heroSubtitle }}</p>
+                    <div class="mt-9 flex flex-wrap items-center justify-center gap-4">
+                        <a href="{{ $settings->heroPrimaryUrl() }}" @if(str_starts_with($settings->heroPrimaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex min-h-[50px] items-center gap-2 px-8 py-3.5 rounded-2xl font-bold text-white shadow-lg" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 75%, #1e1b4b) 100%);">
                             {{ $settings->heroPrimaryLabel() }}
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                         </a>
-                        <a href="{{ $settings->heroSecondaryUrl() }}" @if(str_starts_with($settings->heroSecondaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold border-2 border-white/40 text-white hover:bg-white/10 transition-all">
+                        <a href="{{ $settings->heroSecondaryUrl() }}" @if(str_starts_with($settings->heroSecondaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex min-h-[50px] items-center gap-2 px-8 py-3.5 rounded-2xl font-semibold border-2 border-white/35 text-white hover:bg-white/10 transition-all">
                             {{ $settings->heroSecondaryLabel() }}
                         </a>
                         @if($settings->heroTertiaryLabel() && $settings->heroTertiaryUrl())
-                            <a href="{{ $settings->heroTertiaryUrl() }}" @if(str_starts_with($settings->heroTertiaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl font-semibold border-2 border-white/40 text-white hover:bg-white/10 transition-all">
+                            <a href="{{ $settings->heroTertiaryUrl() }}" @if(str_starts_with($settings->heroTertiaryUrl(), 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex min-h-[50px] items-center gap-2 px-8 py-3.5 rounded-2xl font-semibold border-2 border-white/35 text-white hover:bg-white/10 transition-all">
                                 {{ $settings->heroTertiaryLabel() }}
                             </a>
                         @endif
@@ -99,29 +154,46 @@
 
     @include('website.partials.trust-strip', ['settings' => $settings])
 
-    {{-- How it works --}}
-    <section class="py-12 md:py-16 bg-white border-b border-slate-100 overflow-x-hidden">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-10 md:mb-14 px-1">
-                <h2 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight [text-wrap:balance] break-words">How it works</h2>
-                <p class="mt-3 text-slate-600 max-w-xl mx-auto text-sm sm:text-base leading-relaxed [text-wrap:balance] break-words">Three simple steps from booking to your report.</p>
+    @if($homeStats)
+    <section class="py-12 md:py-16 bg-slate-950 text-white relative overflow-hidden border-b border-slate-800/90">
+        <div class="absolute inset-0 opacity-30 pointer-events-none" style="background: radial-gradient(ellipse 70% 90% at 50% 100%, color-mix(in srgb, var(--primary-color) 50%, transparent), transparent);"></div>
+        <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-10 md:gap-0 text-center md:divide-x md:divide-white/10">
+                <div class="px-2 md:px-6">
+                    <p class="font-display text-4xl md:text-[2.75rem] font-bold tabular-nums leading-none" style="color: color-mix(in srgb, var(--primary-color) 88%, white);">{{ $homeStats['tests'] }}</p>
+                    <p class="mt-3 text-slate-300 text-sm font-medium">Tests processed</p>
+                </div>
+                <div class="px-2 md:px-6">
+                    <p class="font-display text-4xl md:text-[2.75rem] font-bold tabular-nums leading-none" style="color: color-mix(in srgb, var(--primary-color) 88%, white);">{{ $homeStats['patients'] }}</p>
+                    <p class="mt-3 text-slate-300 text-sm font-medium">Patients served</p>
+                </div>
+                <div class="px-2 md:px-6">
+                    <p class="font-display text-4xl md:text-[2.75rem] font-bold tabular-nums leading-none" style="color: color-mix(in srgb, var(--primary-color) 88%, white);">{{ $homeStats['years'] }}</p>
+                    <p class="mt-3 text-slate-300 text-sm font-medium">Years of experience</p>
+                </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-6">
-                <div class="relative text-center p-6 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white shadow-sm">
-                    <div class="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center text-white font-display font-bold text-xl mb-4 shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #1e1b4b) 100%);">1</div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Book test online</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Choose your tests or package and pick a slot that suits you — no long queues.</p>
+        </div>
+    </section>
+    @endif
+
+    {{-- How it works --}}
+    <section class="py-14 md:py-20 bg-white border-b border-slate-100 overflow-x-hidden">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 md:mb-16 px-1">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style="color: var(--primary-color);">Our process</p>
+                <h2 class="font-display text-2xl md:text-[2rem] font-bold text-slate-900 tracking-tight [text-wrap:balance] break-words">{{ $settings->resolvedHomeHowHeading() }}</h2>
+                <p class="mt-4 text-slate-600 max-w-xl mx-auto text-base leading-relaxed [text-wrap:balance] break-words">{{ $settings->resolvedHomeHowSubtitle() }}</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                @foreach($homeHowSteps as $step)
+                <div class="relative text-center p-7 md:p-8 rounded-3xl border border-slate-200/80 bg-white shadow-md shadow-slate-200/40 ring-1 ring-slate-100 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300">
+                    <div class="mx-auto w-16 h-16 rounded-2xl flex items-center justify-center text-white font-display font-bold text-xl mb-5 shadow-lg" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #1e1b4b) 100%);">{{ $loop->iteration }}</div>
+                    <h3 class="font-display font-bold text-lg text-slate-900 mb-2">{{ $step['title'] }}</h3>
+                    @if(!empty($step['body']))
+                        <p class="text-sm text-slate-600 leading-relaxed">{{ $step['body'] }}</p>
+                    @endif
                 </div>
-                <div class="relative text-center p-6 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white shadow-sm">
-                    <div class="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center text-white font-display font-bold text-xl mb-4 shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #1e1b4b) 100%);">2</div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Visit lab or home collection</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Visit our centre for sample collection or request a trained phlebotomist at home.</p>
-                </div>
-                <div class="relative text-center p-6 rounded-2xl border border-slate-200/90 bg-gradient-to-b from-slate-50 to-white shadow-sm">
-                    <div class="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center text-white font-display font-bold text-xl mb-4 shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 70%, #1e1b4b) 100%);">3</div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Get report online</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Access your report securely as soon as it is ready — view or download anytime.</p>
-                </div>
+                @endforeach
             </div>
         </div>
     </section>
@@ -186,57 +258,131 @@
 
     @include('website.partials.spotlight-section', ['settings' => $settings, 'compact' => false])
 
-    {{-- Why choose us --}}
-    <section class="py-16 md:py-20 bg-gradient-to-b from-white to-slate-50 border-b border-slate-100">
+    @if(isset($homePackages) && $homePackages->isNotEmpty())
+    <section class="py-14 md:py-20 bg-gradient-to-b from-slate-50/80 to-white border-b border-slate-100" id="packages-teaser">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-12 md:mb-14">
-                <h2 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Why choose us</h2>
-                <p class="mt-3 text-slate-600 max-w-2xl mx-auto">Quality, speed, and care — built into every test we run.</p>
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-10 md:mb-12">
+                <div>
+                    <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style="color: var(--primary-color);">Health packages</p>
+                    <h2 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Our packages</h2>
+                    <p class="mt-2 text-slate-600 max-w-xl text-base">Curated bundles with transparent pricing — tap to view details or book.</p>
+                </div>
+                <a href="{{ route('public.packages.index') }}" class="inline-flex items-center justify-center gap-2 min-h-[44px] px-4 py-2 text-sm font-bold shrink-0 rounded-xl border-2 border-slate-200 text-slate-800 hover:border-slate-300 hover:bg-white transition-colors">
+                    View all packages
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </a>
             </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <article class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all">
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background: color-mix(in srgb, var(--primary-color) 12%, white); color: var(--primary-color);">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                @foreach($homePackages as $pkg)
+                    <div class="flex flex-col rounded-3xl border border-slate-200/90 bg-white p-6 md:p-7 shadow-md shadow-slate-200/50 ring-1 ring-slate-100 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+                        <h3 class="font-display font-bold text-lg text-slate-900 [text-wrap:balance]">{{ $pkg->name }}</h3>
+                        <p class="mt-3 font-display text-3xl font-bold tabular-nums" style="color: var(--primary-color);">₹{{ number_format((float) ($pkg->final_price ?? $pkg->price), 0) }}</p>
+                        @if($pkg->description)
+                            <p class="mt-2 text-sm text-slate-600 line-clamp-2">{{ $pkg->description }}</p>
+                        @endif
+                        <ul class="mt-4 space-y-2 text-sm text-slate-700 flex-1">
+                            @if(($pkg->tests_count ?? 0) > 0 && $pkg->relationLoaded('tests') && $pkg->tests->isNotEmpty())
+                                @foreach($pkg->tests->take(5) as $t)
+                                    <li class="flex items-start gap-2">
+                                        <svg class="w-5 h-5 shrink-0 mt-0.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        <span class="leading-snug">{{ $t->name }}</span>
+                                    </li>
+                                @endforeach
+                                @if($pkg->tests_count > 5)
+                                    <li class="text-slate-500 pl-7">+ {{ $pkg->tests_count - 5 }} more</li>
+                                @endif
+                            @else
+                                <li class="flex items-start gap-2">
+                                    <svg class="w-5 h-5 shrink-0 mt-0.5 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                    <span>{{ $pkg->tests_count ?? 0 }} tests included</span>
+                                </li>
+                            @endif
+                        </ul>
+                        <div class="mt-6 flex flex-col gap-2">
+                            <a href="{{ route('public.appointments.create') }}?package={{ $pkg->id }}" class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e1b4b) 100%);">
+                                Book now
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </a>
+                            <a href="{{ route('public.packages.show', $pkg) }}" class="inline-flex min-h-[44px] items-center justify-center rounded-2xl px-5 py-2.5 text-sm font-semibold border-2 border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors">
+                                View details
+                            </a>
+                        </div>
                     </div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Accurate reports</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Validated methods, internal QC, and clear reporting you and your doctor can rely on.</p>
-                </article>
-                <article class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all">
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background: color-mix(in srgb, var(--primary-color) 12%, white); color: var(--primary-color);">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                @endforeach
+            </div>
+        </div>
+    </section>
+    @endif
+
+    {{-- Why choose us --}}
+    <section class="py-16 md:py-24 bg-white border-b border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style="color: var(--primary-color);">Why patients choose us</p>
+                <h2 class="font-display text-2xl md:text-[2rem] font-bold text-slate-900 tracking-tight">{{ $settings->resolvedHomeWhyHeading() }}</h2>
+                <p class="mt-4 text-slate-600 text-base md:text-lg leading-relaxed">{{ $settings->resolvedHomeWhySubtitle() }}</p>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+                @foreach($homeWhyCards as $card)
+                <article class="rounded-3xl border border-slate-200/80 bg-gradient-to-b from-slate-50/50 to-white p-7 md:p-8 shadow-sm hover:shadow-lg hover:border-slate-300/90 transition-all duration-300">
+                    <div class="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 shadow-inner border border-white/80" style="background: color-mix(in srgb, var(--primary-color) 14%, white); color: var(--primary-color);">
+                        @include('website.partials.home-why-icon', ['i' => $loop->index])
                     </div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Fast turnaround</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Efficient processing with same-day or next-day results for many routine tests.</p>
+                    <h3 class="font-display font-bold text-lg text-slate-900 mb-3">{{ $card['title'] }}</h3>
+                    @if(!empty($card['body']))
+                        <p class="text-sm text-slate-600 leading-relaxed">{{ $card['body'] }}</p>
+                    @endif
                 </article>
-                <article class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all">
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background: color-mix(in srgb, var(--primary-color) 12%, white); color: var(--primary-color);">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
-                    </div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Home collection</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Trained phlebotomists visit you at home — convenient, hygienic, and on your schedule.</p>
-                </article>
-                <article class="rounded-2xl border border-slate-200/90 bg-white p-6 shadow-sm hover:shadow-md hover:border-slate-300/80 transition-all">
-                    <div class="w-11 h-11 rounded-xl flex items-center justify-center mb-4" style="background: color-mix(in srgb, var(--primary-color) 12%, white); color: var(--primary-color);">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path></svg>
-                    </div>
-                    <h3 class="font-display font-semibold text-lg text-slate-900 mb-2">Trusted lab</h3>
-                    <p class="text-sm text-slate-600 leading-relaxed">Experienced team, modern equipment, and thousands of patients who choose us every year.</p>
-                </article>
+                @endforeach
+            </div>
+        </div>
+    </section>
+
+    {{-- Popular specialties (quick entry points) --}}
+    @php
+        $specialtyLinks = [
+            ['label' => 'Blood tests', 'href' => route('public.appointments.create'), 'icon' => 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'],
+            ['label' => 'Thyroid', 'href' => route('public.appointments.create'), 'icon' => 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['label' => 'Diabetes', 'href' => route('public.appointments.create'), 'icon' => 'M13 10V3L4 14h7v7l9-11h-7z'],
+            ['label' => 'Heart health', 'href' => route('public.appointments.create'), 'icon' => 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z'],
+            ['label' => 'Liver & kidney', 'href' => route('public.appointments.create'), 'icon' => 'M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517L6 18.089V5a2 2 0 012-2h6a2 2 0 012 2v10z'],
+            ['label' => 'Full body', 'href' => route('public.packages.index'), 'icon' => 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z'],
+        ];
+    @endphp
+    <section class="py-12 md:py-16 bg-slate-50/90 border-b border-slate-100" aria-labelledby="specialties-heading">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-10">
+                <h2 id="specialties-heading" class="font-display text-xl md:text-2xl font-bold text-slate-900 tracking-tight">Popular specialties</h2>
+                <p class="mt-2 text-sm text-slate-600 max-w-xl mx-auto">Jump straight to booking or browse packages.</p>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                @foreach($specialtyLinks as $spec)
+                    <a href="{{ $spec['href'] }}" class="group flex flex-col items-center text-center rounded-2xl border border-slate-200/90 bg-white p-4 sm:p-5 shadow-sm hover:shadow-md hover:border-slate-300 hover:-translate-y-0.5 transition-all duration-200">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-xl mb-3 text-white shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 75%, #1e1b4b) 100%);">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $spec['icon'] }}"/></svg>
+                        </span>
+                        <span class="text-sm font-bold text-slate-800 leading-tight group-hover:underline decoration-2 underline-offset-2">{{ $spec['label'] }}</span>
+                        <span class="mt-2 text-xs font-semibold" style="color: var(--primary-color);">Book</span>
+                    </a>
+                @endforeach
             </div>
         </div>
     </section>
 
     {{-- Our Services (carousel: 3 cards per slide on lg, same card design) --}}
-    @if(($settings->show_services_section ?? true) && $tests->count() > 0)
+    @if($settings->show_services_section ?? true)
+    @if($tests->count() > 0)
     @php
         $serviceSlides = $tests->chunk(3);
         $serviceSlideCount = $serviceSlides->count();
+        $serviceImgGlobalIndex = 0;
     @endphp
-    <section class="py-20 md:py-24 bg-gradient-to-b from-slate-50 to-white" aria-labelledby="services-heading">
+    <section class="py-20 md:py-28 bg-gradient-to-b from-white via-slate-50/50 to-white" aria-labelledby="services-heading">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-10 md:mb-14">
-                <h2 id="services-heading" class="font-display text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-slate-900 tracking-tight">{{ $settings->services_heading ?? 'Our Services' }}</h2>
-                <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">{{ $settings->services_subtitle ?? 'Comprehensive diagnostic tests with accurate results and fast turnaround.' }}</p>
+            <div class="text-center mb-12 md:mb-16 max-w-3xl mx-auto">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style="color: var(--primary-color);">Diagnostics</p>
+                <h2 id="services-heading" class="font-display text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{{ $settings->services_heading ?? 'Our services' }}</h2>
+                <p class="mt-4 text-lg text-slate-600 leading-relaxed">{{ $settings->services_subtitle ?? 'Comprehensive tests with accurate results and fast turnaround.' }}</p>
             </div>
 
             <div class="relative"
@@ -277,11 +423,13 @@
                         @foreach($serviceSlides as $chunk)
                             <div class="w-full shrink-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" role="group" aria-roledescription="slide">
                                 @foreach($chunk as $test)
-                                    <article class="group bg-white rounded-2xl shadow-sm shadow-slate-200/60 border border-slate-100 overflow-hidden hover:shadow-xl hover:shadow-slate-200/80 hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+                                    <article class="group bg-white rounded-3xl shadow-md shadow-slate-200/50 border border-slate-200/80 ring-1 ring-slate-100 overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
                                         <div class="aspect-[16/10] bg-slate-100 relative overflow-hidden shrink-0">
                                             @if($test->image)
+                                                @php $isFirstServiceImg = ($serviceImgGlobalIndex === 0); $serviceImgGlobalIndex++; @endphp
                                                 <img src="{{ \Illuminate\Support\Facades\Storage::url($test->image) }}" alt="{{ $test->name }}"
-                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                                     @unless($isFirstServiceImg) loading="lazy" decoding="async" @endunless>
                                             @else
                                                 <div class="w-full h-full flex items-center justify-center" style="background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);">
                                                     <svg class="w-20 h-20 text-slate-400 group-hover:text-slate-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -292,17 +440,20 @@
                                             <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                         </div>
                                         <div class="p-6 lg:p-7 flex flex-col flex-1 min-h-0">
-                                            <h3 class="font-display text-xl font-semibold text-slate-900 mb-2">{{ $test->name }}</h3>
+                                            <h3 class="font-display text-xl font-bold text-slate-900 mb-2">{{ $test->name }}</h3>
                                             @if($test->description)
                                                 <p class="text-slate-600 text-sm leading-relaxed mb-5 flex-1 line-clamp-4">{{ $test->description }}</p>
                                             @else
                                                 <p class="text-slate-500 text-sm mb-5 flex-1">Professional lab test with detailed reporting.</p>
                                             @endif
-                                            <div class="flex items-center justify-between gap-4 pt-5 mt-auto border-t border-slate-100">
-                                                <p class="text-xl font-bold" style="color: var(--primary-color);">₹{{ number_format($test->price, 2) }}</p>
-                                                <a href="{{ route('public.appointments.create') }}?test={{ urlencode($test->name) }}" class="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold rounded-xl text-white transition-all hover:shadow-lg shrink-0" style="background-color: var(--primary-color); box-shadow: 0 2px 10px color-mix(in srgb, var(--primary-color) 35%, transparent);">
-                                                    Book test
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                            <p class="text-2xl font-bold tabular-nums mb-5" style="color: var(--primary-color);">₹{{ number_format($test->price, 0) }}</p>
+                                            <div class="flex flex-col sm:flex-row gap-2 pt-5 mt-auto border-t border-slate-100">
+                                                <a href="{{ route('public.appointments.create') }}?test={{ urlencode($test->name) }}" class="inline-flex flex-1 items-center justify-center gap-2 min-h-[46px] px-4 py-2.5 text-sm font-bold rounded-2xl text-white transition-all hover:opacity-95 shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e1b4b) 100%);">
+                                                    Book now
+                                                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                                                </a>
+                                                <a href="{{ route('public.packages.index') }}" class="inline-flex flex-1 items-center justify-center min-h-[46px] px-4 py-2.5 text-sm font-semibold rounded-2xl border-2 border-slate-200 text-slate-800 hover:bg-slate-50 transition-colors">
+                                                    View packages
                                                 </a>
                                             </div>
                                         </div>
@@ -336,13 +487,25 @@
             </div>
         </div>
     </section>
+    @else
+    <section class="py-16 md:py-20 bg-gradient-to-b from-white via-slate-50/50 to-white border-b border-slate-100" aria-labelledby="services-heading-empty">
+        <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 id="services-heading-empty" class="font-display text-2xl md:text-3xl font-bold text-slate-900">{{ $settings->services_heading ?? 'Our services' }}</h2>
+            <p class="mt-3 text-slate-600">Tests will appear here once they are added in your lab catalog. You can still book a general appointment.</p>
+            <a href="{{ route('public.appointments.create') }}" class="mt-6 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white shadow-md" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e1b4b) 100%);">
+                Book an appointment
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+        </div>
+    </section>
+    @endif
     @endif
 
     {{-- Report download --}}
     @if($settings->online_reports_enabled ?? true)
-    <section class="py-16 md:py-20 bg-white border-b border-slate-100">
+    <section class="py-16 md:py-20 bg-slate-50/50 border-b border-slate-100">
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-50 via-white to-slate-50/80 p-8 md:p-12 shadow-sm flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+            <div class="rounded-[2rem] border border-slate-200/90 bg-white p-8 md:p-12 shadow-lg shadow-slate-200/40 flex flex-col md:flex-row md:items-center md:justify-between gap-10">
                 <div class="max-w-xl">
                     <h2 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Download your reports anytime</h2>
                     <p class="mt-4 text-slate-600 leading-relaxed">Enter the phone number you used when booking or registering. Verify with OTP if prompted, then view or download your report instantly — no need to visit the lab.</p>
@@ -366,15 +529,16 @@
 
     {{-- Testimonials --}}
     @if(($settings->show_testimonials_section ?? true) && isset($testimonials) && $testimonials->count() > 0)
-    <section class="py-20 md:py-24 bg-white">
+    <section class="py-20 md:py-28 bg-white border-b border-slate-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-display text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-slate-900 tracking-tight">{{ $settings->testimonials_heading ?? 'What Our Patients Say' }}</h2>
-                <p class="mt-4 text-lg text-slate-600 max-w-2xl mx-auto">{{ $settings->testimonials_subtitle ?? 'Real feedback from people who trust us.' }}</p>
+            <div class="text-center mb-14 md:mb-16 max-w-2xl mx-auto">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style="color: var(--primary-color);">Testimonials</p>
+                <h2 class="font-display text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{{ $settings->testimonials_heading ?? 'What our patients say' }}</h2>
+                <p class="mt-4 text-lg text-slate-600">{{ $settings->testimonials_subtitle ?? 'Real feedback from people who trust us.' }}</p>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                 @foreach($testimonials as $t)
-                    <article class="group relative bg-white rounded-2xl p-8 border border-slate-200/80 shadow-sm flex flex-col hover:shadow-xl hover:shadow-slate-200/60 hover:border-slate-300/80 transition-all duration-300">
+                    <article class="group relative bg-gradient-to-b from-slate-50/80 to-white rounded-3xl p-8 border border-slate-200/70 shadow-md flex flex-col hover:shadow-lg hover:border-slate-300/80 transition-all duration-300">
                         <div class="absolute top-6 right-6 opacity-10 group-hover:opacity-20 transition-opacity">
                             <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24" style="color: var(--primary-color);"><path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z"/></svg>
                         </div>
@@ -404,31 +568,38 @@
 
     {{-- FAQ --}}
     @if(($settings->show_faq_section ?? true) && isset($faqs) && $faqs->count() > 0)
-    <section class="py-20 md:py-24 bg-gradient-to-b from-slate-50 to-white">
-        <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="font-display text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-slate-900 tracking-tight">{{ $settings->faq_heading ?? 'Frequently Asked Questions' }}</h2>
-                <p class="mt-4 text-lg text-slate-600">{{ $settings->faq_subtitle ?? 'Quick answers to common questions.' }}</p>
+    <section class="py-20 md:py-28 bg-gradient-to-b from-slate-50 to-white">
+        <div class="max-w-3xl lg:max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-14 md:mb-16">
+                <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-3" style="color: var(--primary-color);">FAQ</p>
+                <h2 class="font-display text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">{{ $settings->faq_heading ?? 'Frequently asked questions' }}</h2>
+                <p class="mt-4 text-lg text-slate-600 max-w-xl mx-auto">{{ $settings->faq_subtitle ?? 'Quick answers to common questions.' }}</p>
             </div>
-            <div class="space-y-3" x-data="{ open: null }">
+            <div class="space-y-4" x-data="{ open: null }">
                 @foreach($faqs as $i => $faq)
-                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:border-slate-300/80 transition-all duration-300"
-                         :class="open === {{ $i }} && 'shadow-lg border-l-4'"
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden hover:border-slate-300/90 transition-all duration-300"
+                         :class="open === {{ $i }} && 'shadow-md ring-1 ring-slate-200/80 border-l-[3px]'"
                          :style="open === {{ $i }} ? { borderLeftColor: 'var(--primary-color)' } : {}">
                         <button type="button"
+                                id="faq-button-{{ $i }}"
                                 @click="open = open === {{ $i }} ? null : {{ $i }}"
-                                class="w-full flex items-center justify-between gap-4 px-6 py-5 text-left font-semibold text-slate-900 hover:bg-slate-50/50 transition-colors">
-                            <span class="text-base pr-4">{{ $faq->question }}</span>
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all duration-200" :class="open === {{ $i }} ? 'bg-slate-900 text-white rotate-180 shadow-md' : 'bg-slate-100 text-slate-600'">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                :aria-expanded="open === {{ $i }} ? 'true' : 'false'"
+                                aria-controls="faq-panel-{{ $i }}"
+                                class="w-full flex items-center justify-between gap-4 px-6 py-5 md:py-6 text-left font-bold text-slate-900 text-base md:text-lg hover:bg-slate-50/60 transition-colors">
+                            <span class="pr-4 leading-snug">{{ $faq->question }}</span>
+                            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition-all duration-200" :class="open === {{ $i }} ? 'text-white shadow-md' : 'bg-slate-100 text-slate-600'" :style="open === {{ $i }} ? { background: 'var(--primary-color)' } : {}">
+                                <svg class="w-5 h-5 transition-transform" :class="open === {{ $i }} ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </span>
                         </button>
                         <div x-show="open === {{ $i }}"
                              x-transition:enter="transition ease-out duration-200"
                              x-transition:enter-start="opacity-0"
                              x-transition:enter-end="opacity-100"
+                             id="faq-panel-{{ $i }}"
+                             role="region"
+                             aria-labelledby="faq-button-{{ $i }}"
                              class="border-t border-slate-100">
-                            <div class="px-6 py-5 text-slate-600 leading-relaxed prose prose-slate max-w-none">
+                            <div class="px-6 py-5 md:py-6 text-slate-600 leading-relaxed text-[15px] md:text-base prose prose-slate max-w-none">
                                 {!! nl2br(e($faq->answer)) !!}
                             </div>
                         </div>
@@ -439,11 +610,46 @@
     </section>
     @endif
 
-    {{-- Contact CTA --}}
-    <section class="py-12 md:py-16 bg-slate-50 border-t border-slate-200/60">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <p class="text-slate-600 text-lg mb-2">Need help? Visit our <a href="{{ url('/contact') }}" class="font-semibold hover:underline" style="color: var(--primary-color);">Contact</a> page or <a href="{{ route('public.appointments.create') }}" class="font-semibold hover:underline" style="color: var(--primary-color);">book an appointment</a>.</p>
-            <p class="text-sm text-slate-500 mt-2"><a href="{{ url('/contact') }}" class="hover:underline">View our help center</a></p>
+    {{-- Contact / find us --}}
+    @php
+        $mapUrl = trim((string) ($settings->home_map_url ?? ''));
+        $cPhone = trim((string) ($settings->contact_phone ?? $settings->phone ?? ''));
+        $cPhoneHref = $cPhone !== '' ? 'tel:'.preg_replace('/\s+/', '', $cPhone) : '';
+    @endphp
+    <section class="py-14 md:py-20 bg-gradient-to-b from-white to-slate-50 border-t border-slate-200/60">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="rounded-[2rem] border border-slate-200/90 bg-white p-8 md:p-10 lg:p-12 shadow-lg shadow-slate-200/30 text-center md:text-left">
+                <div class="grid md:grid-cols-2 gap-10 md:gap-12 items-center">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.2em] mb-2" style="color: var(--primary-color);">We are here to help</p>
+                        <h2 class="font-display text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">Questions or ready to book?</h2>
+                        <p class="mt-3 text-slate-600 leading-relaxed">Reach us by phone, visit the contact page, or open directions in Maps.</p>
+                        <div class="mt-6 flex flex-col sm:flex-row flex-wrap gap-3 justify-center md:justify-start">
+                            @if($cPhoneHref !== '')
+                                <a href="{{ $cPhoneHref }}" class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95" style="background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color) 78%, #1e1b4b) 100%);">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                    {{ $cPhone }}
+                                </a>
+                            @endif
+                            <a href="{{ route('public.appointments.create') }}" class="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold border-2 border-slate-200 text-slate-900 hover:bg-slate-50 transition-colors">
+                                Book appointment
+                            </a>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-4 items-center md:items-stretch">
+                        <a href="{{ url('/contact') }}" class="inline-flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 px-5 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50 transition-colors">
+                            <svg class="w-5 h-5 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+                            Contact &amp; hours
+                        </a>
+                        @if($mapUrl !== '')
+                            <a href="{{ str_starts_with($mapUrl, 'http') ? $mapUrl : url($mapUrl) }}" @if(str_starts_with($mapUrl, 'http')) target="_blank" rel="noopener noreferrer" @endif class="inline-flex w-full min-h-[48px] items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-bold text-white shadow-md transition hover:opacity-95" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
+                                <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                Find us on map
+                            </a>
+                        @endif
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 @endsection

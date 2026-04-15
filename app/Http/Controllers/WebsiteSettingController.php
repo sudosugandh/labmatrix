@@ -8,6 +8,7 @@ use App\Models\Page;
 use App\Models\WebsiteSetting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
@@ -46,6 +47,8 @@ class WebsiteSettingController extends Controller
     {
         $settings = WebsiteSetting::getForCurrentLab();
         $tab = $request->get('tab', 'branding');
+
+        $this->stripInvalidOptionalFileUploads($request);
 
         $rules = $this->getValidationRules($tab);
         $validated = $request->validate($rules);
@@ -106,6 +109,15 @@ class WebsiteSettingController extends Controller
             $validated['trust_strip_items'] = $this->mergeTrustStripItemsFromRequest($request, $settings);
             $validated['about_intro'] = $request->input('about_intro');
             $validated['about_why_cards'] = $this->mergeAboutWhyCardsFromRequest($request);
+            $validated['home_how_heading'] = $request->input('home_how_heading');
+            $validated['home_how_subtitle'] = $request->input('home_how_subtitle');
+            $validated['home_how_steps'] = $this->mergeHomeHowStepsFromRequest($request);
+            $validated['home_why_heading'] = $request->input('home_why_heading');
+            $validated['home_why_subtitle'] = $request->input('home_why_subtitle');
+            $validated['home_why_cards'] = $this->mergeHomeWhyCardsFromRequest($request);
+            $validated['home_show_stats_strip'] = $request->boolean('home_show_stats_strip');
+            $validated['home_map_url'] = $request->input('home_map_url') ?: null;
+            $validated['home_show_packages_teaser'] = $request->boolean('home_show_packages_teaser');
             $validated['about_stat_tests'] = $request->input('about_stat_tests');
             $validated['about_stat_patients'] = $request->input('about_stat_patients');
             $validated['about_stat_years'] = $request->input('about_stat_years');
@@ -134,12 +146,14 @@ class WebsiteSettingController extends Controller
                 }
                 $validated['spotlight_image'] = $request->file('spotlight_image')->store('website', 'public');
             }
-            unset($validated['spotlight_remove_image'], $validated['trust_strip'], $validated['about_why']);
+            unset($validated['spotlight_remove_image'], $validated['trust_strip'], $validated['about_why'], $validated['home_how'], $validated['home_why']);
             $validated['facebook_url'] = $request->input('facebook_url') ?: null;
             $validated['twitter_url'] = $request->input('twitter_url') ?: null;
             $validated['instagram_url'] = $request->input('instagram_url') ?: null;
             $validated['linkedin_url'] = $request->input('linkedin_url') ?: null;
             $validated['youtube_url'] = $request->input('youtube_url') ?: null;
+            $gtm = trim((string) $request->input('public_gtm_container_id', ''));
+            $validated['public_gtm_container_id'] = $gtm === '' ? null : strtoupper($gtm);
             if ($request->hasFile('og_image')) {
                 if ($settings->og_image) {
                     Storage::disk('public')->delete($settings->og_image);
@@ -174,8 +188,8 @@ class WebsiteSettingController extends Controller
             case 'branding':
                 $rules = [
                     'brand_name' => 'nullable|string|max:255',
-                    'logo' => 'nullable|image|max:2048',
-                    'favicon' => 'nullable|image|max:512',
+                    'logo' => $this->optionalUploadImageRules(2048),
+                    'favicon' => $this->optionalUploadImageRules(512),
                     'primary_color' => 'nullable|string|max:7',
                     'secondary_color' => 'nullable|string|regex:/^#[0-9A-Fa-f]{6}$/',
                     'phone' => 'nullable|string|max:20',
@@ -241,7 +255,7 @@ class WebsiteSettingController extends Controller
                 $rules = [
                     'hero_title' => 'nullable|string|max:255',
                     'hero_subtitle' => 'nullable|string',
-                    'hero_image' => 'nullable|image|max:5120',
+                    'hero_image' => $this->optionalUploadImageRules(5120),
                     'footer_text' => 'nullable|string',
                     'footer_tagline' => 'nullable|string|max:500',
                     'pre_footer_heading' => 'nullable|string|max:255',
@@ -271,7 +285,7 @@ class WebsiteSettingController extends Controller
                     'announcement_link' => 'nullable|string|max:500',
                     'meta_title' => 'nullable|string|max:255',
                     'meta_description' => 'nullable|string|max:500',
-                    'og_image' => 'nullable|image|max:2048',
+                    'og_image' => $this->optionalUploadImageRules(2048),
                     'show_promos_section' => 'nullable|boolean',
                     'promos_heading' => 'nullable|string|max:255',
                     'promos_subtitle' => 'nullable|string|max:500',
@@ -283,7 +297,7 @@ class WebsiteSettingController extends Controller
                     'trust_strip.*.label' => 'nullable|string|max:120',
                     'trust_strip.*.url' => 'nullable|string|max:500',
                     'trust_strip.*.image_keep' => 'nullable|string|max:500',
-                    'trust_strip.*.image' => 'nullable|image|max:2048',
+                    'trust_strip.*.image' => $this->optionalUploadImageRules(2048),
                     'hero_cta_primary_label' => 'nullable|string|max:120',
                     'hero_cta_primary_url' => 'nullable|string|max:500',
                     'hero_cta_secondary_label' => 'nullable|string|max:120',
@@ -295,12 +309,25 @@ class WebsiteSettingController extends Controller
                     'spotlight_credentials' => 'nullable|string|max:255',
                     'spotlight_tagline' => 'nullable|string|max:500',
                     'spotlight_experience' => 'nullable|string|max:255',
-                    'spotlight_image' => 'nullable|image|max:2048',
+                    'spotlight_image' => $this->optionalUploadImageRules(2048),
                     'spotlight_remove_image' => 'nullable|boolean',
                     'about_intro' => 'nullable|string',
                     'about_why' => 'nullable|array',
                     'about_why.*.title' => 'nullable|string|max:120',
                     'about_why.*.body' => 'nullable|string|max:500',
+                    'home_how_heading' => 'nullable|string|max:255',
+                    'home_how_subtitle' => 'nullable|string|max:500',
+                    'home_how' => 'nullable|array',
+                    'home_how.*.title' => 'nullable|string|max:120',
+                    'home_how.*.body' => 'nullable|string|max:500',
+                    'home_why_heading' => 'nullable|string|max:255',
+                    'home_why_subtitle' => 'nullable|string|max:500',
+                    'home_why' => 'nullable|array',
+                    'home_why.*.title' => 'nullable|string|max:120',
+                    'home_why.*.body' => 'nullable|string|max:500',
+                    'home_show_stats_strip' => 'nullable|boolean',
+                    'home_map_url' => 'nullable|string|max:500',
+                    'home_show_packages_teaser' => 'nullable|boolean',
                     'about_stat_tests' => 'nullable|string|max:80',
                     'about_stat_patients' => 'nullable|string|max:80',
                     'about_stat_years' => 'nullable|string|max:80',
@@ -312,7 +339,18 @@ class WebsiteSettingController extends Controller
                     'instagram_url' => 'nullable|url|max:500',
                     'linkedin_url' => 'nullable|url|max:500',
                     'youtube_url' => 'nullable|url|max:500',
-                    'banner_images.*' => 'nullable|image|max:5120',
+                    'public_gtm_container_id' => [
+                        'nullable',
+                        'string',
+                        'max:24',
+                        function (string $attribute, mixed $value, \Closure $fail): void {
+                            $v = trim((string) $value);
+                            if ($v !== '' && ! preg_match('/^GTM-[A-Z0-9]+$/i', $v)) {
+                                $fail('Use a valid Google Tag Manager ID (e.g. GTM-XXXXXXX) or leave empty.');
+                            }
+                        },
+                    ],
+                    'banner_images.*' => $this->optionalUploadImageRules(5120),
                 ];
                 break;
 
@@ -333,6 +371,45 @@ class WebsiteSettingController extends Controller
         }
 
         return $rules;
+    }
+
+    /**
+     * Remove failed/empty file inputs so nullable optional fields do not fail the `image` / `mimes` rules.
+     */
+    protected function stripInvalidOptionalFileUploads(Request $request): void
+    {
+        foreach (['logo', 'favicon', 'hero_image', 'spotlight_image', 'og_image'] as $key) {
+            if (! $request->hasFile($key)) {
+                continue;
+            }
+            $file = $request->file($key);
+            if ($file instanceof UploadedFile && ! $file->isValid()) {
+                $request->files->remove($key);
+            }
+        }
+
+        $all = $request->files->all();
+        if (isset($all['trust_strip']) && is_array($all['trust_strip'])) {
+            foreach ($all['trust_strip'] as $i => $row) {
+                if (! is_array($row) || empty($row['image'])) {
+                    continue;
+                }
+                $img = $row['image'];
+                if ($img instanceof UploadedFile && ! $img->isValid()) {
+                    unset($all['trust_strip'][$i]['image']);
+                }
+            }
+            $request->files->replace($all);
+        }
+    }
+
+    /**
+     * Laravel's built-in `image` rule only allows jpeg/png/gif/bmp/webp (+svg optionally).
+     * Phones often send AVIF/HEIC — include those for CMS/branding uploads.
+     */
+    protected function optionalUploadImageRules(int $maxKb): string
+    {
+        return 'nullable|file|max:'.$maxKb.'|mimes:jpeg,jpg,png,gif,bmp,webp,svg,avif,heic,heif';
     }
 
     protected function handleFileUploads(Request $request, WebsiteSetting $settings, array &$validated): void
@@ -484,6 +561,66 @@ class WebsiteSettingController extends Controller
                 'body' => trim((string) ($row['body'] ?? '')),
             ];
             if (count($items) >= 6) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    protected function mergeHomeHowStepsFromRequest(Request $request): array
+    {
+        $rows = $request->input('home_how', []);
+        if (! is_array($rows)) {
+            return [];
+        }
+        $items = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $items[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+            if (count($items) >= 3) {
+                break;
+            }
+        }
+
+        return $items;
+    }
+
+    /**
+     * @return list<array{title: string, body: string}>
+     */
+    protected function mergeHomeWhyCardsFromRequest(Request $request): array
+    {
+        $rows = $request->input('home_why', []);
+        if (! is_array($rows)) {
+            return [];
+        }
+        $items = [];
+        foreach ($rows as $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+            $title = trim((string) ($row['title'] ?? ''));
+            if ($title === '') {
+                continue;
+            }
+            $items[] = [
+                'title' => $title,
+                'body' => trim((string) ($row['body'] ?? '')),
+            ];
+            if (count($items) >= 4) {
                 break;
             }
         }

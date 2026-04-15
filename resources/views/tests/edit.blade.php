@@ -90,6 +90,19 @@
                     </select>
                     <p class="mt-1 text-xs text-gray-500">Select a custom report template for this test. If not selected, the default template will be used.</p>
                 </div>
+
+                <div class="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
+                    <input type="hidden" name="featured_on_homepage" value="0">
+                    <label class="inline-flex items-center gap-2 text-sm font-medium text-gray-800">
+                        <input type="checkbox" name="featured_on_homepage" value="1" {{ old('featured_on_homepage', $test->featured_on_homepage) ? 'checked' : '' }} class="rounded border-gray-300 text-indigo-600">
+                        Feature on public homepage (“Our Services”)
+                    </label>
+                    <p class="text-xs text-gray-500">If any test is featured, only featured tests appear in the carousel (up to 24). Otherwise the latest tests are shown.</p>
+                    <div>
+                        <label for="homepage_sort_order" class="block text-xs font-medium text-gray-600 mb-1">Homepage sort (lower first)</label>
+                        <input type="number" name="homepage_sort_order" id="homepage_sort_order" min="0" max="999999" step="1" value="{{ old('homepage_sort_order', $test->homepage_sort_order) }}" placeholder="Optional" class="block w-full max-w-xs rounded-lg border-gray-300 text-sm py-2">
+                    </div>
+                </div>
             </x-form-section>
 
             <!-- Form Actions -->

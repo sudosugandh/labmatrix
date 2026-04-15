@@ -35,4 +35,12 @@ return [
         ],
     ],
 
+    /*
+    | Stripe Billing for the SaaS platform (labs as customers). Patient bill payments use separate keys in lab settings.
+    */
+    'stripe_platform' => [
+        'secret' => env('STRIPE_PLATFORM_SECRET_KEY'),
+        'webhook_secret' => env('STRIPE_PLATFORM_WEBHOOK_SECRET'),
+    ],
+
 ];

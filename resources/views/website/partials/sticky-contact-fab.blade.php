@@ -1,4 +1,4 @@
-{{-- WhatsApp (first) + Call: icon-only circles; mobile = centered row; md+ = bottom-right stack --}}
+{{-- WhatsApp (top) + Call (bottom): vertical stack, bottom-right on all breakpoints — avoids overlapping centered page content on mobile --}}
 @php
     $fabPhone = trim((string) ($settings->contact_phone ?? '')) ?: trim((string) ($settings->phone ?? ''));
     $fabTel = $fabPhone !== '' ? 'tel:' . preg_replace('/\s+/', '', $fabPhone) : '';
@@ -11,10 +11,11 @@
     }
 @endphp
 @if($fabTel !== '' || $fabWa !== '')
-<nav class="fixed z-40 flex pointer-events-none gap-3 [&>a]:pointer-events-auto
-    max-md:left-1/2 max-md:-translate-x-1/2 max-md:right-auto max-md:flex-row max-md:justify-center
-    max-md:bottom-[max(0.65rem,env(safe-area-inset-bottom,0px))]
-    md:flex-col md:items-end md:justify-start md:w-auto md:left-auto md:translate-x-0
+<nav class="fixed z-[60] flex flex-col items-end justify-end gap-3.5 pointer-events-none [&>a]:pointer-events-auto
+    right-[max(0.75rem,env(safe-area-inset-right,0px))]
+    bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))]
+    sm:right-[max(1rem,env(safe-area-inset-right,0px))]
+    sm:bottom-[max(1rem,env(safe-area-inset-bottom,0px))]
     md:right-[max(1.25rem,env(safe-area-inset-right,0px))]
     md:bottom-[max(1.25rem,env(safe-area-inset-bottom,0px))]"
      aria-label="Quick contact">

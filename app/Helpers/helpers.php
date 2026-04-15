@@ -1,10 +1,19 @@
 <?php
 
-if (!function_exists('currentLabId')) {
+use App\Http\Middleware\DetectDomain;
+use App\Models\Lab;
+use App\Support\VendorStaffRoutePatterns;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+if (! function_exists('currentLabId')) {
     /**
      * Get the current lab ID from the request context.
      *
-     * @return int|null
+     * Production: staff should open the app on the lab’s configured host so
+     * {@see DetectDomain} binds lab_id from the domains table.
+     * The user-lab fallback exists only for local/dev or misconfigured hosts; it does not
+     * apply to public website routes.
      */
     function currentLabId(): ?int
     {
@@ -13,94 +22,78 @@ if (!function_exists('currentLabId')) {
         if (app()->bound('lab_id')) {
             return app('lab_id');
         }
-        
+
         // Priority 2: Fallback to config (also set by DetectDomain middleware)
         $labId = config('app.lab_id');
         if ($labId) {
             return $labId;
         }
-        
-        // Priority 3: Only use user's lab_id for admin routes when domain detection fails
-        // This is a fallback ONLY for admin panel access, not for public pages
-        // Public pages MUST have domain detection working
-        if (\Illuminate\Support\Facades\Auth::check()) {
-            $user = \Illuminate\Support\Facades\Auth::user();
-            if ($user && $user->lab_id && !$user->isSuperAdmin()) {
-                // Only allow this fallback for authenticated admin routes
-                // Never use this for public routes
+
+        // Priority 3: Authenticated lab staff only — when the request host has no domain row,
+        // scope vendor console routes to the user's lab_id (see VendorStaffRoutePatterns).
+        if (Auth::check()) {
+            $user = Auth::user();
+            if ($user && $user->lab_id && ! $user->isSuperAdmin()) {
                 $request = request();
-                $isAdminRoute = $request->is([
-                    'admin/*', 
-                    'dashboard', 
-                    'patients/*', 
-                    'tests/*', 
-                    'orders/*', 
-                    'appointments/*', 
-                    'bills/*', 
-                    'reports/*', 
-                    'doctors/*', 
-                    'test-packages/*', 
-                    'analytics',
-                    'technicians/*'
-                ]);
-                
-                if ($isAdminRoute) {
+                if (VendorStaffRoutePatterns::matches($request)) {
+                    if (config('app.debug')) {
+                        Log::debug('currentLabId: using user lab_id fallback (configure lab domain for production)', [
+                            'path' => $request->path(),
+                            'lab_id' => $user->lab_id,
+                        ]);
+                    }
+
                     return $user->lab_id;
                 }
             }
         }
-        
+
         return null;
     }
 }
 
-if (!function_exists('currentLab')) {
+if (! function_exists('currentLab')) {
     /**
      * Get the current lab model from the request context.
-     *
-     * @return \App\Models\Lab|null
      */
-    function currentLab(): ?\App\Models\Lab
+    function currentLab(): ?Lab
     {
         $labId = currentLabId();
-        if (!$labId) {
+        if (! $labId) {
             return null;
         }
-        
-        return \App\Models\Lab::find($labId);
+
+        return Lab::find($labId);
     }
 }
 
-if (!function_exists('isLargeLab')) {
+if (! function_exists('isLargeLab')) {
     /**
      * Check if the current lab is a large level lab.
-     *
-     * @return bool
      */
     function isLargeLab(): bool
     {
         try {
             $lab = currentLab();
+
             return $lab && $lab->level === 'large';
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // If there's any error, return false (safe default)
             return false;
         }
     }
 }
 
-if (!function_exists('getDashboardRoute')) {
+if (! function_exists('getDashboardRoute')) {
     /**
      * Get the appropriate dashboard route based on user role.
-     *
-     * @return string
      */
     function getDashboardRoute(): string
     {
-        if (\Illuminate\Support\Facades\Auth::check() && \Illuminate\Support\Facades\Auth::user()->isSuperAdmin()) {
+        if (Auth::check() && Auth::user()->isSuperAdmin()) {
             return route('super-admin.dashboard', absolute: false);
         }
-        
+
         return route('dashboard', absolute: false);
     }
 }
